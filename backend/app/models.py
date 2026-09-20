@@ -91,6 +91,11 @@ class Complaint(Base):
     resolved_at = Column(DateTime, nullable=True)
     closed_at = Column(DateTime, nullable=True)
 
+    # Duplicate & Related Issue Tracking
+    duplicate_of = Column(String(50), nullable=True)
+    cluster_id = Column(String(50), nullable=True)
+    similarity_score = Column(Float, nullable=True)
+
     # Relationships
     actions = relationship("AgentAction", back_populates="complaint", cascade="all, delete-orphan")
 

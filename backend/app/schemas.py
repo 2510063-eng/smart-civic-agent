@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -54,6 +54,11 @@ class ComplaintResponse(BaseModel):
     sla_deadline: Optional[datetime] = None
     resolved_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
+
+    # Duplicate / Clustering fields
+    duplicate_of: Optional[str] = None
+    cluster_id: Optional[str] = None
+    similarity_score: Optional[float] = None
 
 
 class ComplaintCreatedResponse(BaseModel):
@@ -117,6 +122,11 @@ class AdminStatsResponse(BaseModel):
     escalated: int
     reopened: int
     closed: int
+    unresolved: int = 0
+    sla_breached: int = 0
+    average_resolution_hours: Optional[float] = None
+    by_department: Dict[str, int] = Field(default_factory=dict)
+    by_severity: Dict[str, int] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -206,3 +216,65 @@ class EscalateResponse(BaseModel):
     action: str
     status: str
     message: str
+
+
+# ---------------------------------------------------------------------------
+# AI Analysis & Integration Schemas
+# ---------------------------------------------------------------------------
+
+class AIAnalyzeRequest(BaseModel):
+    complaint_id: str = Field(..., description="Complaint identifier")
+    description: str = Field(..., min_length=3, description="Issue description for classification")
+    image_url: Optional[str] = Field(None, description="Evidence image URL")
+    latitude: Optional[float] = Field(None, description="Location latitude")
+    longitude: Optional[float] = Field(None, description="Location longitude")
+
+
+class AIAnalyzeResponse(BaseModel):
+    complaint_id: str
+    issue_type: str
+    severity: str
+    priority: str
+    severity_score: float
+    department: str
+    confidence: float
+    reason: str
+    reasoning: Optional[str] = None
+    evidence: List[str] = Field(default_factory=list)
+    is_stub: bool = True
+
+
+class ComplaintProcessResponse(BaseModel):
+    complaint_id: str
+    status: str
+    issue_type: Optional[str] = None
+    severity: Optional[str] = None
+    priority: Optional[str] = None
+    department: Optional[str] = None
+    sla_deadline: Optional[datetime] = None
+    actions_logged: List[str] = Field(default_factory=list)
+    message: str
+    complaint: Optional[ComplaintResponse] = None
+
+
+# ---------------------------------------------------------------------------
+# Duplicate & Related Complaint Schemas
+# ---------------------------------------------------------------------------
+
+class RelatedComplaintItem(BaseModel):
+    complaint_id: str
+    issue_type: Optional[str] = None
+    status: str
+    similarity_score: float
+    relationship: str = Field(..., description="'POTENTIAL_DUPLICATE' or 'RELATED_ISSUE'")
+    distance_meters: Optional[float] = None
+    time_difference_hours: Optional[float] = None
+    reasons: List[str] = Field(default_factory=list)
+    created_at: datetime
+
+
+class RelatedComplaintsResponse(BaseModel):
+    complaint_id: str
+    total_related: int
+    related_complaints: List[RelatedComplaintItem] = Field(default_factory=list)
+

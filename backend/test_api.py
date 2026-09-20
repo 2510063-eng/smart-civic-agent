@@ -243,9 +243,156 @@ def run_tests():
         print(f"  Total: {stats['total_complaints']} | Closed: {stats['closed']} | Escalated: {stats['escalated']} | Reopened: {stats['reopened']}")
 
         print("\n==================================================")
-        print(">>> ALL TESTS PASSED SUCCESSFULLY! <<<")
+        print(">>> 7. AI ADAPTER & STRUCTURED OUTPUT VERIFICATION <<<")
+        print("==================================================")
+
+        # 7.1 Test AI Adapter output structure
+        ai_payload = {
+            "complaint_id": "CMP_AI_TEST_01",
+            "description": "Severe sewage pipe overflow flooding road with dirty water",
+            "image_url": "uploads/drainage_overflow.jpg",
+            "latitude": 16.7052,
+            "longitude": 74.2435,
+        }
+        res_ai = client.post("/api/ai/analyze", json=ai_payload)
+        assert res_ai.status_code == 200, f"AI analyze failed: {res_ai.text}"
+        ai_res = res_ai.json()
+        print(f"POST /api/ai/analyze : 200 OK")
+        print(f"  Issue Type: {ai_res['issue_type']} | Severity: {ai_res['severity']} | Dept: {ai_res['department']}")
+        print(f"  Confidence: {ai_res['confidence']} | Severity Score: {ai_res['severity_score']} | Is Stub: {ai_res['is_stub']}")
+        print(f"  Evidence items: {len(ai_res['evidence'])}")
+
+        assert ai_res["complaint_id"] == "CMP_AI_TEST_01"
+        assert ai_res["issue_type"] in ["DRAINAGE", "WATER_LEAKAGE", "OTHER"]
+        assert ai_res["severity"] in ["HIGH", "CRITICAL", "MEDIUM", "LOW"]
+        assert ai_res["department"] in ["DRAINAGE_DEPARTMENT", "WATER_SUPPLY", "GENERAL"]
+        assert 0.0 <= ai_res["severity_score"] <= 1.0
+        assert 0.0 <= ai_res["confidence"] <= 1.0
+        assert isinstance(ai_res["evidence"], list)
+        assert ai_res["is_stub"] is True, "AI adapter stub should be honestly flagged as stub"
+
+        print("\n==================================================")
+        print(">>> 8. AUTOMATIC COMPLAINT PROCESSING WORKFLOW <<<")
+        print("==================================================")
+
+        # 8.1 Create complaint with auto_process=True
+        auto_payload = {
+            "description": "Large dangerous pothole on main road causing accidents",
+            "image_url": "uploads/pothole_auto.jpg",
+            "latitude": 16.7080,
+            "longitude": 74.2450,
+            "location_text": "Main Road near Central Bank",
+            "citizen_id": "CIT005"
+        }
+        res_auto_create = client.post("/api/complaints?auto_process=true", json=auto_payload)
+        assert res_auto_create.status_code == 201
+        auto_data = res_auto_create.json()
+        auto_cid = auto_data["complaint_id"]
+        assert auto_data["complaint"]["status"] == "ASSIGNED"
+        assert auto_data["complaint"]["issue_type"] == "POTHOLE"
+        assert auto_data["complaint"]["department"] == "ROAD_DEPARTMENT"
+        assert auto_data["complaint"]["severity"] == "HIGH"
+        assert auto_data["complaint"]["sla_deadline"] is not None
+        print(f"POST /api/complaints?auto_process=true : 201 Created & Processed -> {auto_cid}")
+        print(f"  Status: {auto_data['complaint']['status']} | Dept: {auto_data['complaint']['department']} | SLA: {auto_data['complaint']['sla_deadline']}")
+
+        # 8.2 Test explicit /process endpoint on an unanalyzed complaint
+        manual_payload = {
+            "description": "Garbage dump accumulated on street corner smelling terrible",
+            "image_url": "uploads/garbage_corner.jpg",
+            "location_text": "Street 4 corner",
+            "citizen_id": "CIT006"
+        }
+        res_manual_create = client.post("/api/complaints", json=manual_payload)
+        assert res_manual_create.status_code == 201
+        manual_cid = res_manual_create.json()["complaint_id"]
+        assert res_manual_create.json()["status"] == "ANALYZING"
+
+        res_process = client.post(f"/api/complaints/{manual_cid}/process")
+        assert res_process.status_code == 200
+        proc_data = res_process.json()
+        assert proc_data["status"] == "ASSIGNED"
+        assert proc_data["issue_type"] == "GARBAGE"
+        assert proc_data["department"] == "SOLID_WASTE_MANAGEMENT"
+        assert "CLASSIFY_ISSUE" in proc_data["actions_logged"]
+        assert "ASSIGN_DEPARTMENT" in proc_data["actions_logged"]
+        print(f"POST /api/complaints/{manual_cid}/process : 200 OK -> ASSIGNED to {proc_data['department']}")
+
+        # 8.3 Verify agent timeline sequence for the processed complaint
+        res_auto_timeline = client.get(f"/api/agent/actions/{auto_cid}")
+        assert res_auto_timeline.status_code == 200
+        auto_actions = [a["action_type"] for a in res_auto_timeline.json()["actions"]]
+        print(f"Agent action sequence for {auto_cid}: {auto_actions}")
+        assert auto_actions[0] == "COMPLAINT_RECEIVED"
+        assert "CLASSIFY_ISSUE" in auto_actions
+        assert "ASSIGN_DEPARTMENT" in auto_actions
+
+        print("\n==================================================")
+        print(">>> 9. DUPLICATE & RELATED COMPLAINT DETECTION <<<")
+        print("==================================================")
+
+        # 9.1 Create two complaints at almost the same coordinates
+        c1_payload = {
+            "description": "Deep crater pothole near bus stop junction",
+            "latitude": 16.7100,
+            "longitude": 74.2500,
+            "location_text": "Bus Stop Junction",
+            "citizen_id": "CIT010"
+        }
+        res_c1 = client.post("/api/complaints?auto_process=true", json=c1_payload)
+        assert res_c1.status_code == 201
+        c1_id = res_c1.json()["complaint_id"]
+
+        # Complaint 2: ~45 meters away, same issue type (pothole)
+        c2_payload = {
+            "description": "Another large pothole on road near bus stop",
+            "latitude": 16.7103,
+            "longitude": 74.2503,
+            "location_text": "Bus Stop Junction",
+            "citizen_id": "CIT011"
+        }
+        res_c2 = client.post("/api/complaints?auto_process=true", json=c2_payload)
+        assert res_c2.status_code == 201
+        c2_id = res_c2.json()["complaint_id"]
+
+        # Query related complaints for c2
+        res_related = client.get(f"/api/complaints/{c2_id}/related")
+        assert res_related.status_code == 200
+        related_data = res_related.json()
+        print(f"GET /api/complaints/{c2_id}/related : 200 OK (Found {related_data['total_related']} related)")
+        assert related_data["total_related"] >= 1
+        top_match = related_data["related_complaints"][0]
+        assert top_match["complaint_id"] == c1_id
+        assert top_match["relationship"] in ["POTENTIAL_DUPLICATE", "RELATED_ISSUE"]
+        assert top_match["distance_meters"] is not None
+        assert top_match["distance_meters"] < 100.0
+        assert top_match["similarity_score"] >= 0.70
+        print(f"  Top Match: {top_match['complaint_id']} | Rel: {top_match['relationship']} | Score: {top_match['similarity_score']} | Dist: {top_match['distance_meters']}m")
+        print(f"  Transparent reasons: {top_match['reasons']}")
+
+        print("\n==================================================")
+        print(">>> 10. ENHANCED ADMIN DASHBOARD METRICS <<<")
+        print("==================================================")
+
+        res_enhanced_stats = client.get("/api/admin/stats")
+        assert res_enhanced_stats.status_code == 200
+        e_stats = res_enhanced_stats.json()
+        print(f"GET /api/admin/stats : 200 OK")
+        print(f"  Total: {e_stats['total_complaints']} | Unresolved: {e_stats['unresolved']} | SLA Breached: {e_stats['sla_breached']}")
+        print(f"  By Department: {e_stats['by_department']}")
+        print(f"  By Severity: {e_stats['by_severity']}")
+        print(f"  Average Resolution Hours: {e_stats['average_resolution_hours']}")
+
+        assert e_stats["total_complaints"] >= 5
+        assert e_stats["unresolved"] >= 1
+        assert "ROAD_DEPARTMENT" in e_stats["by_department"]
+        assert "HIGH" in e_stats["by_severity"]
+
+        print("\n==================================================")
+        print(">>> ALL 10 TEST SUITES PASSED SUCCESSFULLY! <<<")
         print("==================================================")
 
 
 if __name__ == "__main__":
     run_tests()
+

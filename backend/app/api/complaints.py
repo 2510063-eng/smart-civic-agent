@@ -19,6 +19,9 @@ from app.schemas import (
     ComplaintResponse,
     ComplaintCreatedResponse,
     ComplaintListResponse,
+    ComplaintProcessResponse,
+    RelatedComplaintItem,
+    RelatedComplaintsResponse,
     StatusUpdateRequest,
     StatusUpdateResponse,
     ResolveRequest,
@@ -44,6 +47,7 @@ router = APIRouter(prefix="/complaints", tags=["Complaints"])
 )
 def create_complaint(
     payload: ComplaintCreate,
+    auto_process: bool = Query(False, description="If True, immediately runs AI analysis and department routing"),
     db: Session = Depends(get_db),
 ):
     """
@@ -53,9 +57,10 @@ def create_complaint(
     2. Initializes complaint with status 'ANALYZING'.
     3. Calculates initial SLA deadline.
     4. Records the initial 'COMPLAINT_RECEIVED' AgentAction audit log entry.
-    5. Returns the complaint receipt according to the API contract.
+    5. If auto_process is True, immediately classifies issue and routes to department.
+    6. Returns the complaint receipt according to the API contract.
     """
-    new_complaint = complaint_service.create_complaint(db, payload)
+    new_complaint = complaint_service.create_complaint(db, payload, auto_process=auto_process)
     complaint_out = ComplaintResponse.model_validate(new_complaint)
 
     return ComplaintCreatedResponse(
@@ -235,3 +240,96 @@ def verify_complaint(
             detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
         )
     return VerifyResponse(**verify_data)
+
+
+# ---------------------------------------------------------------------------
+# Automated AI Processing & Duplicate Detection Endpoints
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/{complaint_id}/process",
+    response_model=ComplaintProcessResponse,
+    summary="Process complaint through AI agent workflow",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": ComplaintProcessResponse, "description": "Complaint processed and routed"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def process_complaint(
+    complaint_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Triggers the automated AI processing workflow for a complaint:
+    1. Runs AI analysis via adapter (classification, severity, department, evidence).
+    2. Computes dynamic SLA based on severity.
+    3. Updates complaint to 'ASSIGNED' state.
+    4. Logs traceable 'CLASSIFY_ISSUE' and 'ASSIGN_DEPARTMENT' agent actions.
+    """
+    complaint, actions_logged = complaint_service.process_complaint_with_ai(db, complaint_id)
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+
+    complaint_out = ComplaintResponse.model_validate(complaint)
+    return ComplaintProcessResponse(
+        complaint_id=complaint.complaint_id,
+        status=complaint.status,
+        issue_type=complaint.issue_type,
+        severity=complaint.severity,
+        priority=complaint.priority,
+        department=complaint.department,
+        sla_deadline=complaint.sla_deadline,
+        actions_logged=actions_logged,
+        message="Complaint processed and routed to department",
+        complaint=complaint_out,
+    )
+
+
+@router.get(
+    "/{complaint_id}/related",
+    response_model=RelatedComplaintsResponse,
+    summary="Find potential duplicate or related complaints",
+    responses={
+        200: {"model": RelatedComplaintsResponse, "description": "Potential related complaints list"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def get_related_complaints(
+    complaint_id: str,
+    max_distance_meters: float = Query(2000.0, ge=10.0, le=50000.0, description="Max distance in meters"),
+    time_window_hours: float = Query(168.0, ge=1.0, le=720.0, description="Time window in hours"),
+    db: Session = Depends(get_db),
+):
+    """
+    Identifies potentially related complaints or duplicates based on:
+    - Issue type match
+    - Geographic proximity (Haversine distance calculation)
+    - Temporal proximity (time difference in hours)
+    
+    Returns potential matches transparently flagged as POTENTIAL_DUPLICATE or RELATED_ISSUE.
+    """
+    complaint = complaint_service.get_complaint_by_id(db, complaint_id)
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+
+    related = complaint_service.find_related_complaints(
+        db=db,
+        complaint_id=complaint_id,
+        max_distance_meters=max_distance_meters,
+        time_window_hours=time_window_hours,
+    )
+
+    items = [RelatedComplaintItem(**r) for r in related]
+    return RelatedComplaintsResponse(
+        complaint_id=complaint.complaint_id,
+        total_related=len(items),
+        related_complaints=items,
+    )
+

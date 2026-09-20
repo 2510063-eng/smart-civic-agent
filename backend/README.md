@@ -69,14 +69,16 @@ The SQLite database (`civic_issues.db`) is automatically initialized on applicat
 
 ---
 
-## 3. Implemented API Endpoints (Milestones 1 & 2)
+## 3. Implemented API Endpoints (Milestones 1, 2 & 3)
 
 ### Complaints & Lifecycle
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/complaints` | Create a complaint and record initial `COMPLAINT_RECEIVED` agent action |
+| `POST` | `/api/complaints` | Create a complaint (`auto_process=true` immediately classifies and assigns) |
 | `GET` | `/api/complaints` | List complaints with optional `status`, `department`, `severity` filters |
 | `GET` | `/api/complaints/{id}` | Retrieve details for a single complaint |
+| `POST` | `/api/complaints/{id}/process` | Trigger automated AI classification, dynamic SLA target, and department routing |
+| `GET` | `/api/complaints/{id}/related` | Heuristic duplicate and related complaint detection (proximity & issue match) |
 | `PATCH` | `/api/complaints/{id}/status` | Update lifecycle status (e.g. `ASSIGNED`, `IN_PROGRESS`, `ESCALATED`) |
 | `POST` | `/api/complaints/{id}/resolve` | Worker submits resolution proof -> transitions to `VERIFICATION` |
 | `POST` | `/api/complaints/{id}/verify` | AI Before/After verification -> transitions to `CLOSED` (pass) or `REOPENED` (fail) |
@@ -85,18 +87,23 @@ The SQLite database (`civic_issues.db`) is automatically initialized on applicat
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/agent/actions/{id}` | Retrieve chronological agent action audit trail for a complaint |
-| `GET` | `/api/admin/stats` | Aggregated complaint counts by status for Admin Dashboard |
+| `GET` | `/api/admin/stats` | Aggregated dashboard stats (unresolved, SLA breached, by dept, by severity, avg time) |
 | `POST` | `/api/agent/sla-check` | Autonomous SLA engine checking deadlines, triggering `FOLLOW_UP` or `ESCALATE` |
 | `POST` | `/api/agent/follow-up/{id}` | Trigger follow-up reminder for an overdue/unresolved complaint |
 | `POST` | `/api/agent/escalate/{id}` | Trigger escalation to higher authority for an unresolved complaint |
-| `POST` | `/api/ai/analyze` | Adapter endpoint connecting backend to AI Agent Brain stub |
+| `POST` | `/api/agent/process/{id}` | Agent orchestration endpoint to process complaint through AI pipeline |
+| `POST` | `/api/ai/analyze` | Adapter endpoint connecting backend to AI Agent Brain |
 
 ---
 
 ## 4. Agentic Workflow Lifecycle
 
 ```text
-NEW / ANALYZING
+COMPLAINT_RECEIVED (POST /api/complaints)
+      ↓
+AI ANALYSIS & CLASSIFICATION (POST /api/complaints/{id}/process)
+      ├─ CLASSIFY_ISSUE (issue_type, severity, priority, evidence)
+      ├─ ASSIGN_DEPARTMENT (responsible dept, dynamic SLA deadline)
       ↓
    ASSIGNED
       ↓
@@ -111,24 +118,59 @@ NEW / ANALYZING
       └──(AI verification FAILED: POST /verify)──> REOPENED
 ```
 
-Every single state change, SLA check, and AI verification decision is automatically written to the `agent_actions` audit log in SQLite.
+Every single state change, AI classification, department assignment, SLA check, and verification decision is automatically written to the `agent_actions` audit log in SQLite.
 
 ---
 
-## 5. Example API Usage
+## 5. AI Brain Integration Contract (for Faik / `ai-agent/`)
 
-### Create a Complaint
+The backend connects to Faik's AI Brain via `backend/app/services/ai_service.py`.
+
+### Registration Hook
+Faik can register his AI model directly without modifying any API routes:
+```python
+from app.services.ai_service import register_ai_brain_analyzer, register_ai_brain_verifier
+
+def my_ai_analyzer(complaint_id, description, image_url=None, latitude=None, longitude=None):
+    # Call Gemini / Vision / LLM pipeline
+    return {
+        "complaint_id": complaint_id,
+        "issue_type": "POTHOLE",
+        "severity": "HIGH",
+        "priority": "HIGH",
+        "severity_score": 0.88,
+        "department": "ROAD_DEPARTMENT",
+        "confidence": 0.94,
+        "reason": "Large asphalt cavity detected on arterial roadway with vehicular disruption.",
+        "evidence": ["Visual crater detected in image", "Roadway safety risk"],
+    }
+
+register_ai_brain_analyzer(my_ai_analyzer)
+```
+
+If no external analyzer is registered, the backend transparently uses the heuristic adapter stub flagged with `is_stub: True`.
+
+---
+
+## 6. Example API Usage
+
+### Create a Complaint with Auto-Processing
 ```bash
-curl -X POST "http://localhost:8000/api/complaints" \
+curl -X POST "http://localhost:8000/api/complaints?auto_process=true" \
      -H "Content-Type: application/json" \
      -d '{
-       "description": "Large pothole near the main road causing severe traffic hazard",
+       "description": "Large dangerous pothole near the main road causing traffic hazard",
        "image_url": "uploads/pothole.jpg",
        "latitude": 16.7050,
        "longitude": 74.2433,
        "location_text": "Main road near central bus stand",
        "citizen_id": "CIT001"
      }'
+```
+
+### Check for Duplicate / Related Issues
+```bash
+curl -X GET "http://localhost:8000/api/complaints/CMP001/related"
 ```
 
 ### Run Autonomous SLA Monitor Check
@@ -160,9 +202,15 @@ curl -X POST "http://localhost:8000/api/complaints/CMP001/verify" \
 curl -X GET "http://localhost:8000/api/agent/actions/CMP001"
 ```
 
+### Get Admin Dashboard Metrics
+```bash
+curl -X GET "http://localhost:8000/api/admin/stats"
+```
+
 ---
 
-## 6. Development Principles & Rules
+## 7. Development Principles & Rules
 - **Contract Adherence**: Field names and endpoint signatures strictly follow `docs/API_CONTRACT.md` and `docs/DATABASE_SCHEMA.md`.
-- **Honest AI Integration**: AI fields remain `null` at intake until Faik's AI Agent Brain runs. Verification is handled via a clean, separated adapter.
+- **Honest AI Integration**: AI outputs are clearly flagged with `is_stub: True` until Faik registers his model.
 - **Traceability & Auditability**: Every agent action across PERCEIVE → REASON → DECIDE → ACT → OBSERVE → FOLLOW UP → ESCALATE → VERIFY is recorded in `agent_actions`.
+

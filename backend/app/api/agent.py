@@ -23,19 +23,15 @@ from app.schemas import (
     FollowUpResponse,
     EscalateRequest,
     EscalateResponse,
+    AIAnalyzeRequest,
+    AIAnalyzeResponse,
+    ComplaintProcessResponse,
+    ComplaintResponse,
     ErrorResponse,
 )
 from app.services import agent_service, complaint_service, ai_service
 
 router = APIRouter(tags=["Agent & Admin"])
-
-
-class AIAnalyzeRequest(BaseModel):
-    complaint_id: str = Field(..., description="Complaint identifier")
-    description: str = Field(..., description="Issue description for classification")
-    image_url: Optional[str] = Field(None, description="Evidence image URL")
-    latitude: Optional[float] = Field(None, description="Location latitude")
-    longitude: Optional[float] = Field(None, description="Location longitude")
 
 
 @router.get(
@@ -271,6 +267,7 @@ def trigger_escalate_by_id(
 
 @router.post(
     "/ai/analyze",
+    response_model=AIAnalyzeResponse,
     summary="[Adapter] Submit complaint to AI Brain adapter stub",
     status_code=status.HTTP_200_OK,
 )
@@ -280,7 +277,9 @@ def analyze_complaint_adapter(
     """
     Adapter endpoint that routes to ai_service.AIServiceAdapter.
     
-    NOTE: In Milestone 1 & 2, this returns deterministic stub data.
+    Returns structured AI analysis result:
+    - issue_type, severity, priority, severity_score, department, confidence, reason, evidence, is_stub.
+    
     When Faik integrates ai-agent/, this routes directly to the AI Brain.
     """
     result = ai_service.analyze_complaint(
@@ -290,4 +289,44 @@ def analyze_complaint_adapter(
         latitude=payload.latitude,
         longitude=payload.longitude,
     )
-    return result
+    return AIAnalyzeResponse(**result)
+
+
+@router.post(
+    "/agent/process/{complaint_id}",
+    response_model=ComplaintProcessResponse,
+    summary="Agent triggers autonomous complaint processing",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": ComplaintProcessResponse, "description": "Complaint processed"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def agent_process_complaint(
+    complaint_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Agent orchestration endpoint for autonomous complaint processing.
+    Runs AI analysis, sets dynamic SLA, transitions to ASSIGNED, and logs audit actions.
+    """
+    complaint, actions_logged = complaint_service.process_complaint_with_ai(db, complaint_id)
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+
+    complaint_out = ComplaintResponse.model_validate(complaint)
+    return ComplaintProcessResponse(
+        complaint_id=complaint.complaint_id,
+        status=complaint.status,
+        issue_type=complaint.issue_type,
+        severity=complaint.severity,
+        priority=complaint.priority,
+        department=complaint.department,
+        sla_deadline=complaint.sla_deadline,
+        actions_logged=actions_logged,
+        message="Complaint processed and routed to department",
+        complaint=complaint_out,
+    )

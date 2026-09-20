@@ -26,6 +26,23 @@ def get_db():
 
 
 def init_db():
-    """Create all database tables automatically on startup."""
+    """Create all database tables automatically on startup and ensure schema consistency."""
     import app.models  # Ensure models are imported before creating tables
     Base.metadata.create_all(bind=engine)
+
+    # For SQLite: ensure any newly added columns exist if the file already exists
+    if settings.DATABASE_URL.startswith("sqlite"):
+        with engine.connect() as conn:
+            try:
+                res = conn.exec_driver_sql("PRAGMA table_info(complaints)")
+                existing_cols = [row[1] for row in res.fetchall()]
+                if existing_cols:
+                    if "duplicate_of" not in existing_cols:
+                        conn.exec_driver_sql("ALTER TABLE complaints ADD COLUMN duplicate_of VARCHAR(50)")
+                    if "cluster_id" not in existing_cols:
+                        conn.exec_driver_sql("ALTER TABLE complaints ADD COLUMN cluster_id VARCHAR(50)")
+                    if "similarity_score" not in existing_cols:
+                        conn.exec_driver_sql("ALTER TABLE complaints ADD COLUMN similarity_score FLOAT")
+                    conn.commit()
+            except Exception:
+                pass

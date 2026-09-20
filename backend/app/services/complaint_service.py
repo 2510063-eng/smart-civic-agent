@@ -1,11 +1,7 @@
-"""
-Complaint Service
-
-Handles business logic and database persistence for civic complaints.
-"""
-
+import math
+import json
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models import Complaint, ComplaintStatus, AgentActionType, SeverityLevel
@@ -22,7 +18,7 @@ def generate_complaint_id(db: Session) -> str:
     return f"CMP{(count + 1):03d}"
 
 
-def create_complaint(db: Session, data: ComplaintCreate) -> Complaint:
+def create_complaint(db: Session, data: ComplaintCreate, auto_process: bool = False) -> Complaint:
     """
     Flow for POST /api/complaints:
     1. Validate the request (handled by Pydantic schema).
@@ -30,9 +26,8 @@ def create_complaint(db: Session, data: ComplaintCreate) -> Complaint:
     3. Give it an initial status according to API contract (ANALYZING).
     4. Store created_at and updated_at.
     5. Create an AgentAction entry showing that the complaint was received.
-    6. Return the created complaint.
-    
-    AI fields are kept empty/null until explicitly analyzed by Faik's AI agent in Milestone 2.
+    6. If auto_process is True, immediately trigger AI processing workflow.
+    7. Return the created complaint.
     """
     complaint_id = generate_complaint_id(db)
     now = datetime.utcnow()
@@ -87,7 +82,107 @@ def create_complaint(db: Session, data: ComplaintCreate) -> Complaint:
         status="SUCCESS",
     )
 
+    if auto_process:
+        complaint, _ = process_complaint_with_ai(db, complaint_id)
+
     return complaint
+
+
+def process_complaint_with_ai(
+    db: Session,
+    complaint_id: str,
+    custom_ai_result: Optional[Dict[str, Any]] = None,
+) -> Tuple[Optional[Complaint], List[str]]:
+    """
+    Automated Complaint Processing Workflow:
+    1. Retrieve complaint by ID.
+    2. Pass evidence/description to AIServiceAdapter (or use custom_ai_result).
+    3. Update complaint record with classified issue_type, severity, priority, department, reason, evidence.
+    4. Compute dynamic SLA deadline based on severity:
+       - CRITICAL: 6 hours
+       - HIGH: 24 hours
+       - MEDIUM: 48 hours
+       - LOW: 72 hours
+    5. Transition status to ASSIGNED.
+    6. Record traceable AgentActions:
+       - CLASSIFY_ISSUE
+       - ASSIGN_DEPARTMENT
+    7. Commit changes and return updated complaint and list of logged actions.
+    """
+    complaint = get_complaint_by_id(db, complaint_id)
+    if not complaint:
+        return None, []
+
+    ai_data = custom_ai_result or ai_service.analyze_complaint(
+        complaint_id=complaint.complaint_id,
+        description=complaint.description,
+        image_url=complaint.image_url,
+        latitude=complaint.latitude,
+        longitude=complaint.longitude,
+    )
+
+    now = datetime.utcnow()
+    issue_type = ai_data.get("issue_type", "OTHER")
+    severity = (ai_data.get("severity") or "LOW").upper()
+    priority = (ai_data.get("priority") or severity).upper()
+    severity_score = float(ai_data.get("severity_score", 0.5))
+    department = ai_data.get("department", "GENERAL")
+    confidence = float(ai_data.get("confidence", 0.5))
+    reason = ai_data.get("reason") or ai_data.get("reasoning") or "AI classification completed"
+    raw_evidence = ai_data.get("evidence", [])
+    evidence_str = json.dumps(raw_evidence) if isinstance(raw_evidence, list) else str(raw_evidence)
+
+    # Dynamic SLA calculation based on severity
+    if severity == SeverityLevel.CRITICAL.value:
+        sla_hours = 6
+    elif severity == SeverityLevel.HIGH.value:
+        sla_hours = 24
+    elif severity == SeverityLevel.MEDIUM.value:
+        sla_hours = 48
+    else:
+        sla_hours = 72
+
+    sla_deadline = (complaint.created_at or now) + timedelta(hours=sla_hours)
+
+    complaint.issue_type = issue_type
+    complaint.severity = severity
+    complaint.priority = priority
+    complaint.severity_score = severity_score
+    complaint.department = department
+    complaint.confidence = confidence
+    complaint.reason = reason
+    complaint.evidence = evidence_str
+    complaint.sla_deadline = sla_deadline
+    complaint.sla_due_at = sla_deadline
+    complaint.status = ComplaintStatus.ASSIGNED.value
+    complaint.updated_at = now
+
+    db.commit()
+    db.refresh(complaint)
+
+    # 1. Action: CLASSIFY_ISSUE
+    record_agent_action(
+        db=db,
+        complaint_id=complaint.complaint_id,
+        action_type=AgentActionType.CLASSIFY_ISSUE.value,
+        description=f"AI classified issue as {issue_type} with {severity} severity.",
+        reason=reason,
+        result=f"Issue: {issue_type}, Severity: {severity} (Score: {severity_score:.2f}, Confidence: {confidence:.2f}).",
+        status="SUCCESS",
+    )
+
+    # 2. Action: ASSIGN_DEPARTMENT
+    record_agent_action(
+        db=db,
+        complaint_id=complaint.complaint_id,
+        action_type=AgentActionType.ASSIGN_DEPARTMENT.value,
+        description=f"Complaint assigned to {department}.",
+        reason=f"Responsible department for issue type '{issue_type}'.",
+        result=f"Assigned to {department}. Dynamic SLA target set to {sla_hours} hours ({sla_deadline.strftime('%Y-%m-%d %H:%M UTC')}).",
+        status="SUCCESS",
+    )
+
+    return complaint, [AgentActionType.CLASSIFY_ISSUE.value, AgentActionType.ASSIGN_DEPARTMENT.value]
 
 
 def get_complaint_by_id(db: Session, complaint_id: str) -> Optional[Complaint]:
@@ -124,19 +219,197 @@ def list_complaints(
     return query.order_by(Complaint.created_at.desc()).offset(offset).limit(limit).all()
 
 
-def get_admin_stats(db: Session) -> Dict[str, int]:
+def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
-    Returns aggregated counts for admin dashboard.
+    Calculates the great-circle distance between two points on Earth in meters
+    using the Haversine formula.
     """
+    R = 6371000.0  # Earth radius in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (math.sin(delta_phi / 2.0) ** 2 +
+         math.cos(phi1) * math.cos(phi2) *
+         math.sin(delta_lambda / 2.0) ** 2)
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return R * c
+
+
+def find_related_complaints(
+    db: Session,
+    complaint_id: str,
+    max_distance_meters: float = 2000.0,
+    time_window_hours: float = 168.0,
+) -> List[Dict[str, Any]]:
+    """
+    Lightweight heuristic foundation for identifying potentially related complaints
+    or duplicates without claiming fake ML.
+    
+    Checks:
+    1. Issue type match (+0.45 score).
+    2. Geographical proximity within max_distance_meters (up to +0.45 score).
+    3. Temporal proximity within time_window_hours (up to +0.10 score).
+    
+    Returns potential related complaints flagged as 'POTENTIAL_DUPLICATE' or 'RELATED_ISSUE'
+    with transparent reasons.
+    """
+    target = get_complaint_by_id(db, complaint_id)
+    if not target:
+        return []
+
+    window_start = (target.created_at or datetime.utcnow()) - timedelta(hours=time_window_hours)
+    candidates = (
+        db.query(Complaint)
+        .filter(Complaint.id != target.id)
+        .filter(Complaint.created_at >= window_start)
+        .all()
+    )
+
+    results = []
+
+    for cand in candidates:
+        score = 0.0
+        reasons = []
+        distance_m = None
+
+        # 1. Issue Type Check
+        if target.issue_type and cand.issue_type and target.issue_type == cand.issue_type:
+            score += 0.45
+            reasons.append(f"Same issue type: {target.issue_type}")
+        elif not target.issue_type and not cand.issue_type:
+            # If unclassified, check keyword overlap in description
+            target_words = set(target.description.lower().split())
+            cand_words = set(cand.description.lower().split())
+            overlap = target_words.intersection(cand_words)
+            if len(overlap) >= 2:
+                score += 0.25
+                reasons.append("Shared keywords in citizen description")
+
+        # 2. Location Check
+        if target.latitude is not None and target.longitude is not None and cand.latitude is not None and cand.longitude is not None:
+            distance_m = round(calculate_haversine_distance(
+                target.latitude, target.longitude, cand.latitude, cand.longitude
+            ), 1)
+
+            if distance_m <= 100.0:
+                score += 0.45
+                reasons.append(f"Immediate proximity: {distance_m}m away")
+            elif distance_m <= 500.0:
+                score += 0.35
+                reasons.append(f"Close neighborhood proximity: {distance_m}m away")
+            elif distance_m <= max_distance_meters:
+                score += 0.20
+                reasons.append(f"In same general area: {distance_m}m away")
+        elif target.location_text and cand.location_text:
+            if target.location_text.strip().lower() == cand.location_text.strip().lower():
+                score += 0.30
+                reasons.append(f"Matching location text: '{target.location_text}'")
+
+        # 3. Time Check
+        if target.created_at and cand.created_at:
+            time_diff_hours = abs((cand.created_at - target.created_at).total_seconds()) / 3600.0
+        else:
+            time_diff_hours = 0.0
+
+        if time_diff_hours <= 24.0:
+            score += 0.10
+            reasons.append(f"Reported within {round(time_diff_hours, 1)}h of each other")
+        elif time_diff_hours <= 72.0:
+            score += 0.05
+            reasons.append(f"Reported within {round(time_diff_hours, 1)}h")
+
+        final_score = round(min(score, 1.0), 2)
+
+        # Include if candidate has meaningful similarity
+        if final_score >= 0.40:
+            relationship = "POTENTIAL_DUPLICATE" if final_score >= 0.70 else "RELATED_ISSUE"
+            results.append({
+                "complaint_id": cand.complaint_id,
+                "issue_type": cand.issue_type,
+                "status": cand.status,
+                "similarity_score": final_score,
+                "relationship": relationship,
+                "distance_meters": distance_m,
+                "time_difference_hours": round(time_diff_hours, 1),
+                "reasons": reasons,
+                "created_at": cand.created_at,
+            })
+
+    # Sort highest similarity first
+    results.sort(key=lambda x: x["similarity_score"], reverse=True)
+    return results
+
+
+def get_admin_stats(db: Session) -> Dict[str, Any]:
+    """
+    Returns aggregated metrics for admin dashboard.
+    """
+    now = datetime.utcnow()
     total = db.query(func.count(Complaint.id)).scalar() or 0
 
-    # Query counts grouped by status
     status_counts = (
         db.query(Complaint.status, func.count(Complaint.id))
         .group_by(Complaint.status)
         .all()
     )
     counts_map = {status.upper(): count for status, count in status_counts}
+
+    # Department breakdown
+    dept_counts = (
+        db.query(Complaint.department, func.count(Complaint.id))
+        .filter(Complaint.department.isnot(None))
+        .group_by(Complaint.department)
+        .all()
+    )
+    by_department = {d: c for d, c in dept_counts if d}
+
+    # Severity breakdown
+    sev_counts = (
+        db.query(Complaint.severity, func.count(Complaint.id))
+        .filter(Complaint.severity.isnot(None))
+        .group_by(Complaint.severity)
+        .all()
+    )
+    by_severity = {s: c for s, c in sev_counts if s}
+
+    # Unresolved complaints (not in CLOSED or RESOLVED)
+    terminal_statuses = [ComplaintStatus.CLOSED.value, ComplaintStatus.RESOLVED.value]
+    unresolved_count = (
+        db.query(func.count(Complaint.id))
+        .filter(~Complaint.status.in_(terminal_statuses))
+        .scalar() or 0
+    )
+
+    # SLA breached count (unresolved AND past sla_deadline)
+    sla_breached_count = (
+        db.query(func.count(Complaint.id))
+        .filter(~Complaint.status.in_(terminal_statuses))
+        .filter(Complaint.sla_deadline.isnot(None))
+        .filter(Complaint.sla_deadline < now)
+        .scalar() or 0
+    )
+
+    # Average resolution time in hours for resolved/closed complaints
+    resolved_complaints = (
+        db.query(Complaint)
+        .filter(
+            (Complaint.resolved_at.isnot(None)) | (Complaint.closed_at.isnot(None))
+        )
+        .all()
+    )
+    avg_hours = None
+    if resolved_complaints:
+        durations = []
+        for c in resolved_complaints:
+            end_time = c.closed_at or c.resolved_at
+            if end_time and c.created_at:
+                diff_hours = (end_time - c.created_at).total_seconds() / 3600.0
+                if diff_hours >= 0:
+                    durations.append(diff_hours)
+        if durations:
+            avg_hours = round(sum(durations) / len(durations), 2)
 
     return {
         "total_complaints": total,
@@ -148,6 +421,11 @@ def get_admin_stats(db: Session) -> Dict[str, int]:
         "escalated": counts_map.get("ESCALATED", 0),
         "reopened": counts_map.get("REOPENED", 0),
         "closed": counts_map.get("CLOSED", 0),
+        "unresolved": unresolved_count,
+        "sla_breached": sla_breached_count,
+        "average_resolution_hours": avg_hours,
+        "by_department": by_department,
+        "by_severity": by_severity,
     }
 
 
