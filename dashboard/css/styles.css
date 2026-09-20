@@ -56,6 +56,12 @@ body {
 }
 
 /* Leaflet map customization */
+#gis-map {
+  min-height: 500px;
+  width: 100%;
+  height: 100%;
+}
+
 .leaflet-container {
   font-family: var(--font-sans);
   background: #0f172a !important;

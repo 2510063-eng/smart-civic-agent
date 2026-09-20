@@ -642,8 +642,9 @@
   <script src="js/app.js"></script>
 
   <script>
-    // Initialize Lucide icons on initial load
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+      try { lucide.createIcons(); } catch(e) {}
+    }
   </script>
 </body>
 </html>

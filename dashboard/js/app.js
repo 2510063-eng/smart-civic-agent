@@ -20,17 +20,25 @@ let activeFilters = {
   mapLayer: "ALL"
 };
 
+function safeCreateIcons() {
+  if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+    try { lucide.createIcons(); } catch (e) { console.warn("Lucide notice:", e); }
+  }
+}
+
 // --- Lifecycle Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
-  initMap();
-  initCharts();
-  renderAll();
-  updateApiModeIndicator();
+  try { initMap(); } catch(e) { console.error("Map init error:", e); }
+  try { initCharts(); } catch(e) { console.error("Charts init error:", e); }
+  try { renderAll(); } catch(e) { console.error("Render error:", e); }
+  try { updateApiModeIndicator(); } catch(e) {}
 
   // Subscribe to store changes for reactive UI updates
-  window.store.subscribe(() => {
-    renderAll();
-  });
+  if (window.store && typeof window.store.subscribe === 'function') {
+    window.store.subscribe(() => {
+      try { renderAll(); } catch (e) { console.error("Store update render error:", e); }
+    });
+  }
 });
 
 // --- Tab Navigation ---
@@ -56,13 +64,23 @@ function switchTab(tabId) {
     updateCharts();
   }
 
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // --- Map Initialization ---
 function initMap() {
   const mapEl = document.getElementById("gis-map");
   if (!mapEl) return;
+
+  if (typeof L === 'undefined') {
+    mapEl.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full p-8 text-center text-slate-400 bg-slate-950/80">
+        <div class="text-cyan-400 font-semibold text-sm mb-1.5">GIS Spatial Grid Ready</div>
+        <p class="text-xs text-slate-400 max-w-sm">Leaflet map library will render once online. In the meantime, complaints table, AI verification, and inspector are active.</p>
+      </div>
+    `;
+    return;
+  }
 
   mapInstance = L.map('gis-map', {
     zoomControl: true,
@@ -77,6 +95,7 @@ function initMap() {
 
   renderMapMarkers();
 }
+
 
 function renderMapMarkers() {
   if (!mapInstance) return;
@@ -152,7 +171,7 @@ function renderAll() {
   renderWorkersGrid();
   renderMapMarkers();
   updateCharts();
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 // --- Render KPI Cards ---
@@ -476,9 +495,14 @@ function renderWorkersGrid() {
 
 // --- Chart.js Analytics ---
 function initCharts() {
+  if (typeof Chart === 'undefined') {
+    console.warn("Chart.js not loaded.");
+    return;
+  }
   const deptCtx = document.getElementById('chart-departments');
   const catCtx = document.getElementById('chart-categories');
   if (!deptCtx || !catCtx) return;
+
 
   chartDepartmentsInstance = new Chart(deptCtx, {
     type: 'bar',
@@ -596,7 +620,7 @@ function openInspectModal(complaintId) {
   }
 
   document.getElementById("modal-complaint-inspect").classList.remove("hidden");
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function closeInspectModal() {
@@ -625,7 +649,7 @@ function openWorkerDispatch(complaintId) {
   `).join("");
 
   document.getElementById("modal-worker-dispatch").classList.remove("hidden");
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function closeWorkerDispatchModal() {
@@ -843,7 +867,7 @@ function showToast(title, message, type = "info") {
   `;
 
   container.appendChild(toast);
-  lucide.createIcons();
+  safeCreateIcons();
 
   requestAnimationFrame(() => {
     toast.classList.remove("translate-y-2", "opacity-0");
@@ -863,7 +887,7 @@ function applyFilters() {
   activeFilters.severity = document.getElementById("filter-severity").value;
   activeFilters.sortBy = document.getElementById("filter-sort").value;
   renderComplaintsTable();
-  lucide.createIcons();
+  safeCreateIcons();
 }
 
 function resetFilters() {
