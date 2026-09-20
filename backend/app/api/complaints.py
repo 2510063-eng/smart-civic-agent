@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models import ComplaintStatus
 from app.schemas import (
     ComplaintCreate,
     ComplaintResponse,
@@ -137,6 +138,7 @@ def get_complaint(
     summary="Update complaint lifecycle status",
     responses={
         200: {"model": StatusUpdateResponse, "description": "Status updated successfully"},
+        400: {"model": ErrorResponse, "description": "Invalid status value"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -149,10 +151,21 @@ def update_status(
     Updates the lifecycle status of a complaint (e.g. IN_PROGRESS, ASSIGNED, ESCALATED).
     Records an AgentAction audit log entry for the state transition.
     """
+    valid_statuses = [s.value for s in ComplaintStatus]
+    target_status = payload.status.upper()
+    if target_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": f"Invalid status '{payload.status}'. Valid statuses: {', '.join(valid_statuses)}",
+                "code": "INVALID_STATUS",
+            },
+        )
+
     updated_complaint = complaint_service.update_complaint_status(
         db=db,
         complaint_id=complaint_id,
-        new_status=payload.status,
+        new_status=target_status,
         reason=payload.reason,
     )
     if not updated_complaint:
@@ -178,6 +191,7 @@ def update_status(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": ResolveResponse, "description": "Resolution submitted"},
+        400: {"model": ErrorResponse, "description": "Invalid operation"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -190,17 +204,24 @@ def resolve_complaint(
     Field worker or department marks issue as resolved and submits proof.
     Transitions status to 'VERIFICATION' and logs RESOLVE_SUBMITTED agent action.
     """
+    existing = complaint_service.get_complaint_by_id(db, complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot resolve complaint '{complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     complaint = complaint_service.resolve_complaint(
         db=db,
         complaint_id=complaint_id,
         resolution_description=payload.resolution_description,
         after_image_url=payload.after_image_url,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return ResolveResponse(
         complaint_id=complaint.complaint_id,
         status=complaint.status,
@@ -215,6 +236,7 @@ def resolve_complaint(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": VerifyResponse, "description": "Verification outcome"},
+        400: {"model": ErrorResponse, "description": "Invalid operation"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -229,16 +251,23 @@ def verify_complaint(
     - If FAILED: Status becomes 'REOPENED'.
     Records VERIFY_RESOLUTION agent action in audit timeline.
     """
+    existing = complaint_service.get_complaint_by_id(db, complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot verify complaint '{complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     complaint, verify_data = complaint_service.verify_complaint(
         db=db,
         complaint_id=complaint_id,
         after_image_url=payload.after_image_url,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return VerifyResponse(**verify_data)
 
 

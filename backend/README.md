@@ -214,3 +214,34 @@ curl -X GET "http://localhost:8000/api/admin/stats"
 - **Honest AI Integration**: AI outputs are clearly flagged with `is_stub: True` until Faik registers his model.
 - **Traceability & Auditability**: Every agent action across PERCEIVE → REASON → DECIDE → ACT → OBSERVE → FOLLOW UP → ESCALATE → VERIFY is recorded in `agent_actions`.
 
+---
+
+## 8. Hackathon Demo Walkthrough (for Teammates)
+
+To demonstrate the full agentic civic issue resolution workflow during the hackathon evaluation:
+
+### 1. Start the Server
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+Interactive API documentation: `http://localhost:8000/docs`
+
+### 2. Run Automated Verification Suite (11 Suites)
+```bash
+python test_api.py
+```
+
+### 3. Demo Storyboard
+1. **Citizen Reports Issue**: Call `POST /api/complaints?auto_process=true` with description and image.
+2. **AI Autonomous Classification**: System immediately classifies issue (`POTHOLE`), assigns department (`ROAD_DEPARTMENT`), sets severity (`HIGH`), and calculates dynamic SLA (24h).
+3. **Agent Action Audit Log**: Call `GET /api/agent/actions/{id}` to show `COMPLAINT_RECEIVED`, `CLASSIFY_ISSUE`, `ASSIGN_DEPARTMENT`.
+4. **Duplicate Detection**: Call `GET /api/complaints/{id}/related` to demonstrate spatial and issue clustering for municipal efficiency.
+5. **SLA Breach & Escalation**: Run `POST /api/agent/sla-check` to show autonomous background monitoring and auto-escalation of overdue critical issues.
+6. **Worker Resolution**: Call `POST /api/complaints/{id}/resolve` to submit field fix evidence (`VERIFICATION`).
+7. **AI Verification**: Call `POST /api/complaints/{id}/verify`:
+   - Fails verification $\to$ transitions to `REOPENED` with rework reason.
+   - Passes verification $\to$ transitions to `CLOSED` with resolution timestamp.
+8. **Admin Metrics**: Call `GET /api/admin/stats` to show real-time municipal dashboard metrics (unresolved count, SLA breached count, breakdown by department and severity).
+
+

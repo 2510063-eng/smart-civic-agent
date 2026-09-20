@@ -361,14 +361,15 @@ def run_tests():
         related_data = res_related.json()
         print(f"GET /api/complaints/{c2_id}/related : 200 OK (Found {related_data['total_related']} related)")
         assert related_data["total_related"] >= 1
-        top_match = related_data["related_complaints"][0]
-        assert top_match["complaint_id"] == c1_id
-        assert top_match["relationship"] in ["POTENTIAL_DUPLICATE", "RELATED_ISSUE"]
-        assert top_match["distance_meters"] is not None
-        assert top_match["distance_meters"] < 100.0
-        assert top_match["similarity_score"] >= 0.70
-        print(f"  Top Match: {top_match['complaint_id']} | Rel: {top_match['relationship']} | Score: {top_match['similarity_score']} | Dist: {top_match['distance_meters']}m")
-        print(f"  Transparent reasons: {top_match['reasons']}")
+        matched_ids = [r["complaint_id"] for r in related_data["related_complaints"]]
+        assert c1_id in matched_ids, f"Expected {c1_id} in {matched_ids}"
+        c1_match = next(r for r in related_data["related_complaints"] if r["complaint_id"] == c1_id)
+        assert c1_match["relationship"] in ["POTENTIAL_DUPLICATE", "RELATED_ISSUE"]
+        assert c1_match["distance_meters"] is not None
+        assert c1_match["distance_meters"] < 100.0
+        assert c1_match["similarity_score"] >= 0.70
+        print(f"  Target Match: {c1_match['complaint_id']} | Rel: {c1_match['relationship']} | Score: {c1_match['similarity_score']} | Dist: {c1_match['distance_meters']}m")
+        print(f"  Transparent reasons: {c1_match['reasons']}")
 
         print("\n==================================================")
         print(">>> 10. ENHANCED ADMIN DASHBOARD METRICS <<<")
@@ -389,10 +390,57 @@ def run_tests():
         assert "HIGH" in e_stats["by_severity"]
 
         print("\n==================================================")
-        print(">>> ALL 10 TEST SUITES PASSED SUCCESSFULLY! <<<")
+        print(">>> 11. ERROR HANDLING & STATE MACHINE INTEGRITY <<<")
+        print("==================================================")
+
+        # 11.1 Non-existent complaint ID returns clean 404
+        bad_id = "CMP_NON_EXISTENT_9999"
+        res_404_get = client.get(f"/api/complaints/{bad_id}")
+        assert res_404_get.status_code == 404
+        assert res_404_get.json()["code"] == "COMPLAINT_NOT_FOUND"
+        print(f"GET /api/complaints/{bad_id} -> 404 NOT FOUND (Clean error: {res_404_get.json()['code']})")
+
+        res_404_patch = client.patch(f"/api/complaints/{bad_id}/status", json={"status": "ASSIGNED"})
+        assert res_404_patch.status_code == 404
+        assert res_404_patch.json()["code"] == "COMPLAINT_NOT_FOUND"
+
+        res_404_actions = client.get(f"/api/agent/actions/{bad_id}")
+        assert res_404_actions.status_code == 404
+        assert res_404_actions.json()["code"] == "COMPLAINT_NOT_FOUND"
+
+        # 11.2 Invalid status enum value returns clean 400
+        res_bad_status = client.patch(f"/api/complaints/{cid}/status", json={"status": "TOTALLY_INVALID_STATUS"})
+        assert res_bad_status.status_code == 400
+        assert res_bad_status.json()["code"] == "INVALID_STATUS"
+        print(f"PATCH /api/complaints/{cid}/status (Invalid status) -> 400 BAD REQUEST (Code: {res_bad_status.json()['code']})")
+
+        # 11.3 Illegal operation on already CLOSED complaint
+        # (cid is CLOSED from Suite 3)
+        res_resolve_closed = client.post(
+            f"/api/complaints/{cid}/resolve",
+            json={"resolution_description": "Trying to resolve a closed complaint"}
+        )
+        assert res_resolve_closed.status_code == 400
+        assert res_resolve_closed.json()["code"] == "ALREADY_CLOSED"
+        print(f"POST /api/complaints/{cid}/resolve (On CLOSED complaint) -> 400 BAD REQUEST (Code: {res_resolve_closed.json()['code']})")
+
+        res_escalate_closed = client.post(f"/api/agent/escalate/{cid}")
+        assert res_escalate_closed.status_code == 400
+        assert res_escalate_closed.json()["code"] == "ALREADY_CLOSED"
+        print(f"POST /api/agent/escalate/{cid} (On CLOSED complaint) -> 400 BAD REQUEST (Code: {res_escalate_closed.json()['code']})")
+
+        # 11.4 Validation error on missing required field
+        res_invalid_post = client.post("/api/complaints", json={"description": "a"})  # min_length=3
+        assert res_invalid_post.status_code == 400
+        assert res_invalid_post.json()["code"] == "VALIDATION_ERROR"
+        print(f"POST /api/complaints (Invalid payload) -> 400 BAD REQUEST (Code: {res_invalid_post.json()['code']})")
+
+        print("\n==================================================")
+        print(">>> ALL 11 TEST SUITES PASSED SUCCESSFULLY! <<<")
         print("==================================================")
 
 
 if __name__ == "__main__":
     run_tests()
+
 

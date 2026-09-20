@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models import ComplaintStatus
 from app.schemas import (
     AgentActionResponse,
     AgentActionHistoryResponse,
@@ -131,16 +132,23 @@ def trigger_follow_up(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": "complaint_id is required in request body", "code": "MISSING_COMPLAINT_ID"},
         )
+    existing = complaint_service.get_complaint_by_id(db, payload.complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot follow up on complaint '{payload.complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     complaint = complaint_service.follow_up_complaint(
         db=db,
         complaint_id=payload.complaint_id,
         reason=payload.reason,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return FollowUpResponse(
         complaint_id=complaint.complaint_id,
         action="FOLLOW_UP",
@@ -156,6 +164,7 @@ def trigger_follow_up(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": FollowUpResponse, "description": "Follow-up initiated"},
+        400: {"model": ErrorResponse, "description": "Invalid operation on closed complaint"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -167,17 +176,24 @@ def trigger_follow_up_by_id(
     """
     Triggers follow-up for a complaint specified via URL path.
     """
+    existing = complaint_service.get_complaint_by_id(db, complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot follow up on complaint '{complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     reason = payload.reason if payload else "Complaint has not been updated within SLA"
     complaint = complaint_service.follow_up_complaint(
         db=db,
         complaint_id=complaint_id,
         reason=reason,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return FollowUpResponse(
         complaint_id=complaint.complaint_id,
         action="FOLLOW_UP",
@@ -193,7 +209,7 @@ def trigger_follow_up_by_id(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": EscalateResponse, "description": "Escalation initiated"},
-        400: {"model": ErrorResponse, "description": "Missing complaint_id"},
+        400: {"model": ErrorResponse, "description": "Missing complaint_id or invalid operation"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -210,16 +226,23 @@ def trigger_escalate(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"error": "complaint_id is required in request body", "code": "MISSING_COMPLAINT_ID"},
         )
+    existing = complaint_service.get_complaint_by_id(db, payload.complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot escalate complaint '{payload.complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     complaint = complaint_service.escalate_complaint(
         db=db,
         complaint_id=payload.complaint_id,
         reason=payload.reason,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return EscalateResponse(
         complaint_id=complaint.complaint_id,
         action="ESCALATE",
@@ -235,6 +258,7 @@ def trigger_escalate(
     status_code=status.HTTP_200_OK,
     responses={
         200: {"model": EscalateResponse, "description": "Escalation initiated"},
+        400: {"model": ErrorResponse, "description": "Invalid operation on closed complaint"},
         404: {"model": ErrorResponse, "description": "Complaint not found"},
     },
 )
@@ -246,17 +270,24 @@ def trigger_escalate_by_id(
     """
     Escalates a complaint specified via URL path.
     """
+    existing = complaint_service.get_complaint_by_id(db, complaint_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    if existing.status == ComplaintStatus.CLOSED.value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": f"Cannot escalate complaint '{complaint_id}' because it is already CLOSED.", "code": "ALREADY_CLOSED"},
+        )
+
     reason = payload.reason if payload else "SLA breached without resolution"
     complaint = complaint_service.escalate_complaint(
         db=db,
         complaint_id=complaint_id,
         reason=reason,
     )
-    if not complaint:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
-        )
     return EscalateResponse(
         complaint_id=complaint.complaint_id,
         action="ESCALATE",
