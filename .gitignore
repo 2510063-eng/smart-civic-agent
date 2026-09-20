@@ -23,6 +23,7 @@ backend/civic_issues.db
 node_modules/
 dist/
 dist-ssr/
+.vite/
 .pnp
 .pnp.js
 
