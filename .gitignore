@@ -1,15 +1,37 @@
 # Python
-.venv/
-venv/
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+backend/venv/
+
+# SQLite Database files
+*.db
 *.sqlite
 *.sqlite3
-*.db
+civic_issues.db
+backend/civic_issues.db
+
+# Node / Frontend / Dashboard
+node_modules/
+dist/
+dist-ssr/
+.pnp
+.pnp.js
 
 # Environment
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Uploads and temporary files
 uploads/
@@ -23,3 +45,8 @@ htmlcov/
 Thumbs.db
 # .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
