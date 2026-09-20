@@ -1,0 +1,6 @@
+
+MODEL_NAME = "gemini"
+
+AI_AGENT_VERSION = "0.1.0"
+
+DEFAULT_CONFIDENCE = 0.0
