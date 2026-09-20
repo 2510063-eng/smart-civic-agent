@@ -21,5 +21,5 @@ htmlcov/
 # OS / Editor
 .DS_Store
 Thumbs.db
-.vscode/
+# .vscode/
 .idea/
