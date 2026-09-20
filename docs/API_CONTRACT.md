@@ -196,7 +196,4 @@ Creates a new civic complaint.
   "code": "COMPLAINT_NOT_FOUND"
 }
 
-Then click **Commit changes…** → message:
 
-```text
-docs: add API contract
