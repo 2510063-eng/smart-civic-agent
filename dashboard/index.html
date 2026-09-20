@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicResolve AI — Municipal Admin & Verification Dashboard</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              500: '#06b6d4',
+              600: '#0891b2',
+              700: '#0e7490',
+              900: '#164e63',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Leaflet GIS Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Dashboard CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-[#080d1a] text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 w-full glass-panel border-b border-white/10 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+    <!-- Brand / Title -->
+    <div class="flex items-center gap-3.5">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-lg">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">CivicResolve AI</h1>
+          <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">Admin Command</span>
+        </div>
+        <p class="text-xs text-slate-400">Autonomous Civic Issue Resolution & Verification Console</p>
+      </div>
+    </div>
+
+    <!-- Center Navigation Tabs -->
+    <nav class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-white/10 text-xs font-medium">
+      <button onclick="switchTab('command')" id="nav-tab-command" class="px-3.5 py-1.5 rounded-lg text-white bg-cyan-500/20 border border-cyan-500/30 flex items-center gap-1.5 transition-all">
+        <i data-lucide="map" class="w-4 h-4 text-cyan-400"></i> Command Map
+      </button>
+      <button onclick="switchTab('complaints')" id="nav-tab-complaints" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-all">
+        <i data-lucide="list-filter" class="w-4 h-4"></i> Complaints (<span id="tab-count-complaints">0</span>)
+      </button>
+      <button onclick="switchTab('verification')" id="nav-tab-verification" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-all relative">
+        <i data-lucide="scan-eye" class="w-4 h-4 text-indigo-400"></i> AI Verification
+        <span id="tab-badge-verification" class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+      </button>
+      <button onclick="switchTab('analytics')" id="nav-tab-analytics" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-all">
+        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Analytics
+      </button>
+      <button onclick="switchTab('workers')" id="nav-tab-workers" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-all">
+        <i data-lucide="users" class="w-4 h-4"></i> Workers
+      </button>
+    </nav>
+
+    <!-- Right Controls / Actions -->
+    <div class="flex items-center gap-2.5">
+      <!-- 2-Min Demo Walkthrough Button -->
+      <button onclick="triggerDemoWalkthrough()" title="Interactive Hackathon Demo" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition-all">
+        <i data-lucide="play-circle" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">2-Min Demo</span>
+      </button>
+
+      <!-- Connect Further / API Settings Button -->
+      <button onclick="openApiSettingsModal()" id="btn-api-status" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-white/10 hover:border-cyan-500/40 text-slate-300 flex items-center gap-2 transition-all">
+        <span id="indicator-api-mode" class="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+        <span id="label-api-mode" class="hidden sm:inline">Standalone Mode</span>
+        <i data-lucide="settings-2" class="w-3.5 h-3.5 text-slate-400"></i>
+      </button>
+
+      <!-- Add New Mock Complaint Button -->
+      <button onclick="openNewComplaintModal()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 border border-white/10 text-white flex items-center gap-1.5 transition-all">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">New Issue</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sub-Header: Real-time Municipal KPI Strip -->
+  <section class="border-b border-white/5 bg-slate-950/60 px-4 lg:px-8 py-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <!-- Total -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-slate-400">
+        <div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Issues</div>
+          <div class="text-2xl font-bold text-white mt-0.5" id="kpi-total">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-slate-800 text-slate-300"><i data-lucide="folder" class="w-4 h-4"></i></div>
+      </div>
+
+      <!-- Pending / Assigned -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-amber-500">
+        <div>
+          <div class="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Pending Action</div>
+          <div class="text-2xl font-bold text-white mt-0.5" id="kpi-pending">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400"><i data-lucide="clock" class="w-4 h-4"></i></div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-cyan-500">
+        <div>
+          <div class="text-[11px] font-medium text-cyan-400 uppercase tracking-wider">In Progress</div>
+          <div class="text-2xl font-bold text-white mt-0.5" id="kpi-inprogress">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><i data-lucide="wrench" class="w-4 h-4"></i></div>
+      </div>
+
+      <!-- Resolved / Closed -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-emerald-500">
+        <div>
+          <div class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Resolved</div>
+          <div class="text-2xl font-bold text-white mt-0.5" id="kpi-resolved">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
+      </div>
+
+      <!-- SLA Breached -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-rose-500 bg-rose-950/10">
+        <div>
+          <div class="text-[11px] font-medium text-rose-400 uppercase tracking-wider">SLA Breached</div>
+          <div class="text-2xl font-bold text-rose-400 mt-0.5" id="kpi-breached">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-rose-500/15 text-rose-400"><i data-lucide="alert-triangle" class="w-4 h-4 animate-bounce"></i></div>
+      </div>
+
+      <!-- Verification / Reopened -->
+      <div class="glass-panel p-3 rounded-xl flex items-center justify-between border-l-4 border-l-indigo-500">
+        <div>
+          <div class="text-[11px] font-medium text-indigo-400 uppercase tracking-wider">Verification Req.</div>
+          <div class="text-2xl font-bold text-white mt-0.5" id="kpi-verification">0</div>
+        </div>
+        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><i data-lucide="eye" class="w-4 h-4"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content View Area -->
+  <main class="flex-1 p-4 lg:p-8 max-w-[1700px] w-full mx-auto">
+
+    <!-- ==================== TAB 1: COMMAND CENTER & GIS MAP ==================== -->
+    <div id="tab-content-command" class="tab-pane flex flex-col gap-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        <!-- Left 2 Cols: GIS Interactive Map -->
+        <div class="xl:col-span-2 glass-panel rounded-2xl overflow-hidden flex flex-col h-[650px] border border-white/10">
+          <div class="p-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3 bg-slate-900/60">
+            <div class="flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-5 h-5 text-cyan-400"></i>
+              <h2 class="font-semibold text-sm text-white">Live Municipal Spatial GIS Map</h2>
+              <span class="text-xs text-slate-400">(Kolhapur Municipal Corporation Grid)</span>
+            </div>
+
+            <!-- Map Layer Quick Toggles -->
+            <div class="flex items-center gap-1.5 text-xs">
+              <button onclick="filterMapLayer('ALL')" class="map-filter-btn px-2.5 py-1 rounded-md bg-white/10 text-white font-medium hover:bg-white/20 transition-all">All</button>
+              <button onclick="filterMapLayer('CRITICAL')" class="map-filter-btn px-2.5 py-1 rounded-md bg-red-500/20 text-red-400 font-medium hover:bg-red-500/30 transition-all">Critical Only</button>
+              <button onclick="filterMapLayer('ROAD_DEPARTMENT')" class="map-filter-btn px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-400 font-medium hover:bg-amber-500/30 transition-all">Roads</button>
+              <button onclick="filterMapLayer('SANITATION_DEPARTMENT')" class="map-filter-btn px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 font-medium hover:bg-emerald-500/30 transition-all">Sanitation</button>
+              <button onclick="filterMapLayer('WATER_SUPPLY_SEWERAGE')" class="map-filter-btn px-2.5 py-1 rounded-md bg-sky-500/20 text-sky-400 font-medium hover:bg-sky-500/30 transition-all">Water</button>
+            </div>
+          </div>
+
+          <!-- The Leaflet Map Container -->
+          <div id="gis-map" class="flex-1 w-full h-full relative z-10"></div>
+        </div>
+
+        <!-- Right 1 Col: Autonomous Agent Activity Timeline -->
+        <div class="glass-panel rounded-2xl p-4 flex flex-col h-[650px] border border-white/10">
+          <div class="flex items-center justify-between pb-3 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></div>
+              <h2 class="font-semibold text-sm text-white">Autonomous Agent Timeline</h2>
+            </div>
+            <span class="text-[11px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full font-mono">CivicResolutionAgent</span>
+          </div>
+
+          <!-- Activity List -->
+          <div id="agent-actions-list" class="flex-1 overflow-y-auto mt-3 pr-1 space-y-3">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: COMPLAINTS ROSTER ==================== -->
+    <div id="tab-content-complaints" class="tab-pane hidden flex flex-col gap-5">
+      <!-- Search & Filters Toolbar -->
+      <div class="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
+        <!-- Search Input -->
+        <div class="relative flex-1 min-w-[260px]">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="filter-search" oninput="applyFilters()" placeholder="Search by ID, keyword, location, citizen..." class="w-full bg-slate-900/90 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 transition-all">
+        </div>
+
+        <!-- Filter Selects -->
+        <div class="flex flex-wrap items-center gap-2.5 text-xs">
+          <!-- Status Filter -->
+          <select id="filter-status" onchange="applyFilters()" class="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+            <option value="ALL">All Statuses</option>
+            <option value="NEW">New</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="VERIFICATION">Verification</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+            <option value="SLA_BREACH">SLA Breached</option>
+            <option value="ESCALATED">Escalated</option>
+            <option value="REOPENED">Reopened</option>
+          </select>
+
+          <!-- Department Filter -->
+          <select id="filter-department" onchange="applyFilters()" class="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+            <option value="ALL">All Departments</option>
+            <option value="ROAD_DEPARTMENT">Roads & Infrastructure</option>
+            <option value="SANITATION_DEPARTMENT">Public Sanitation</option>
+            <option value="WATER_SUPPLY_SEWERAGE">Water Supply & Sewerage</option>
+            <option value="ELECTRICITY_BOARD">Street Lighting & Power</option>
+            <option value="DRAINAGE_WORKS">Drainage & Stormwater</option>
+          </select>
+
+          <!-- Severity Filter -->
+          <select id="filter-severity" onchange="applyFilters()" class="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+
+          <!-- Sort Select -->
+          <select id="filter-sort" onchange="applyFilters()" class="bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+            <option value="date">Newest First</option>
+            <option value="severity">Highest Severity Score</option>
+            <option value="sla">Most Urgent SLA</option>
+          </select>
+
+          <!-- Reset Filter Button -->
+          <button onclick="resetFilters()" class="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white" title="Reset Filters">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Complaints Table -->
+      <div class="glass-panel rounded-2xl border border-white/10 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-950/70 border-b border-white/10 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th class="py-3.5 px-4">Complaint ID</th>
+                <th class="py-3.5 px-4">Category & Details</th>
+                <th class="py-3.5 px-4">Severity / Score</th>
+                <th class="py-3.5 px-4">Department</th>
+                <th class="py-3.5 px-4">Status & SLA</th>
+                <th class="py-3.5 px-4">Assigned Worker</th>
+                <th class="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="complaints-table-body" class="divide-y divide-white/5 text-slate-200">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: RESOLUTION VERIFICATION STUDIO ==================== -->
+    <div id="tab-content-verification" class="tab-pane hidden flex flex-col gap-6">
+      <div class="glass-panel p-5 rounded-2xl border border-white/10 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-semibold uppercase">Jaydeep's Verification Desk</span>
+            <h2 class="text-lg font-bold text-white">Before & After AI Resolution Verification</h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">Autonomous computer vision and authority sign-off to verify that field workers actually completed civic repairs.</p>
+        </div>
+        <div class="text-xs text-slate-400">
+          Awaiting Verification: <span id="verification-queue-count" class="font-bold text-indigo-400">0</span>
+        </div>
+      </div>
+
+      <!-- Verification Cards List -->
+      <div id="verification-cards-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Dynamically populated via JS -->
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: MUNICIPAL ANALYTICS ==================== -->
+    <div id="tab-content-analytics" class="tab-pane hidden flex flex-col gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Chart 1: Department Workload & Performance -->
+        <div class="glass-panel p-5 rounded-2xl border border-white/10">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-sm text-white">Department Issue Distribution & Workload</h3>
+            <span class="text-xs text-slate-400">Active Load</span>
+          </div>
+          <div class="h-64">
+            <canvas id="chart-departments"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Category Distribution -->
+        <div class="glass-panel p-5 rounded-2xl border border-white/10">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-sm text-white">Civic Issues by Category Breakdown</h3>
+            <span class="text-xs text-slate-400">Category Share</span>
+          </div>
+          <div class="h-64 flex items-center justify-center">
+            <canvas id="chart-categories"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Stats Table -->
+      <div class="glass-panel p-5 rounded-2xl border border-white/10">
+        <h3 class="font-semibold text-sm text-white mb-3">Resolution Metrics & SLA Health Report</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-white/5">
+            <div class="text-xs text-slate-400">Avg. Resolution Duration</div>
+            <div class="text-2xl font-bold text-cyan-400 mt-1" id="stat-avg-hours">14.2 hrs</div>
+            <div class="text-[11px] text-emerald-400 mt-1">↓ 18% improvement vs last cycle</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-white/5">
+            <div class="text-xs text-slate-400">Municipal SLA Compliance Rate</div>
+            <div class="text-2xl font-bold text-emerald-400 mt-1" id="stat-sla-rate">88%</div>
+            <div class="text-[11px] text-slate-400 mt-1">Target: > 85%</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-white/5">
+            <div class="text-xs text-slate-400">Autonomous AI Classification Accuracy</div>
+            <div class="text-2xl font-bold text-indigo-400 mt-1">94.8%</div>
+            <div class="text-[11px] text-slate-400 mt-1">Based on manual authority audits</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: WORKER ROSTER ==================== -->
+    <div id="tab-content-workers" class="tab-pane hidden flex flex-col gap-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white">Municipal Field Operative Roster</h2>
+          <p class="text-xs text-slate-400">Real-time availability, dispatch capacity, and department assignment</p>
+        </div>
+      </div>
+
+      <div id="workers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Dynamically populated via JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal 1: Deep Complaint Inspection & AI Analysis Modal -->
+  <div id="modal-complaint-inspect" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-slate-900 border border-white/20 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl flex flex-col">
+      <div class="flex items-start justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <div id="modal-inspect-badge-severity" class="px-3 py-1 rounded-lg text-xs font-bold uppercase border"></div>
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span id="modal-inspect-id">CMP001</span>
+              <span id="modal-inspect-type" class="text-slate-400 text-sm font-normal"></span>
+            </h3>
+            <p id="modal-inspect-location" class="text-xs text-slate-400"></p>
+          </div>
+        </div>
+        <button onclick="closeInspectModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-5">
+        <!-- Left: Citizen Evidence & Photo -->
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Submitted Photo Evidence</label>
+            <div class="relative rounded-xl overflow-hidden border border-white/10 aspect-video bg-black flex items-center justify-center">
+              <img id="modal-inspect-image" src="" alt="Citizen Photo" class="w-full h-full object-cover">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Citizen Description</label>
+            <p id="modal-inspect-description" class="text-sm text-slate-200 bg-slate-950/70 p-3.5 rounded-xl border border-white/5 leading-relaxed"></p>
+          </div>
+
+          <!-- Citizen Metadata -->
+          <div class="grid grid-cols-2 gap-2 text-xs bg-slate-950/50 p-3 rounded-xl border border-white/5">
+            <div><span class="text-slate-400">Reported By:</span> <span id="modal-inspect-citizen" class="text-white font-medium"></span></div>
+            <div><span class="text-slate-400">Citizen Phone:</span> <span id="modal-inspect-phone" class="text-white font-medium"></span></div>
+            <div><span class="text-slate-400">Reported At:</span> <span id="modal-inspect-time" class="text-white font-medium"></span></div>
+            <div><span class="text-slate-400">SLA Deadline:</span> <span id="modal-inspect-deadline" class="text-amber-400 font-medium"></span></div>
+          </div>
+        </div>
+
+        <!-- Right: AI Perception & Explainable Reasoning Engine -->
+        <div class="flex flex-col gap-4">
+          <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-950/40 via-purple-950/20 to-slate-950 border border-indigo-500/20">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">AI Perception & Reasoning</span>
+              </div>
+              <span id="modal-inspect-confidence" class="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">94% Confidence</span>
+            </div>
+
+            <!-- Severity Meter -->
+            <div class="mb-3">
+              <div class="flex justify-between text-xs mb-1 text-slate-400">
+                <span>Calculated Severity Score</span>
+                <span id="modal-inspect-score-val" class="font-mono text-cyan-400">0.92 / 1.0</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div id="modal-inspect-score-bar" class="h-full bg-gradient-to-r from-cyan-500 to-rose-500 rounded-full" style="width: 92%"></div>
+              </div>
+            </div>
+
+            <!-- AI Reason -->
+            <div class="mb-3">
+              <div class="text-xs text-slate-400 font-medium mb-1">AI Classification Rationale:</div>
+              <p id="modal-inspect-reason" class="text-xs text-slate-300 leading-relaxed italic bg-black/30 p-2.5 rounded-lg border border-white/5"></p>
+            </div>
+
+            <!-- Explainable Evidence Checklist -->
+            <div>
+              <div class="text-xs text-slate-400 font-medium mb-1.5">Detected Visual & Contextual Evidence:</div>
+              <ul id="modal-inspect-evidence-list" class="text-xs text-slate-300 space-y-1">
+                <!-- Dynamically populated -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- Duplicate Cluster Alert if applicable -->
+          <div id="modal-inspect-duplicate-box" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-start gap-2.5">
+            <i data-lucide="copy" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold">Duplicate Incident Clustered:</span>
+              <span id="modal-inspect-duplicate-text"></span>
+            </div>
+          </div>
+
+          <!-- Dispatch & Authority Actions -->
+          <div class="p-4 rounded-xl bg-slate-950/60 border border-white/5 flex flex-col gap-3">
+            <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Authority Controls</div>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="openWorkerDispatchForCurrent()" class="px-3 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+                <i data-lucide="user-check" class="w-4 h-4"></i> Dispatch Worker
+              </button>
+              <button onclick="promptChangeStatusForCurrent()" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+                <i data-lucide="edit-3" class="w-4 h-4"></i> Update Status
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Worker Dispatch Modal -->
+  <div id="modal-worker-dispatch" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-slate-900 border border-white/20 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="send" class="w-4 h-4 text-cyan-400"></i> Dispatch Field Operative
+        </h3>
+        <button onclick="closeWorkerDispatchModal()" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-3">Select available worker from the responsible department:</p>
+      
+      <div id="dispatch-workers-list" class="space-y-2 max-h-60 overflow-y-auto mb-5 pr-1">
+        <!-- Dynamically populated -->
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="closeWorkerDispatchModal()" class="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white bg-white/5">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: "Connect Further" API Settings Modal -->
+  <div id="modal-api-settings" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Data Source & Backend API Settings</h3>
+            <p class="text-[11px] text-slate-400">Choose standalone mode or connect to Piyush's FastAPI backend</p>
+          </div>
+        </div>
+        <button onclick="closeApiSettingsModal()" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Mode Selection -->
+      <div class="space-y-3 mb-5">
+        <!-- Standalone Mode -->
+        <label class="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-slate-950/60 cursor-pointer hover:border-cyan-500/40 transition-all">
+          <input type="radio" name="api-mode-radio" value="mock" id="radio-mode-mock" class="mt-1 text-cyan-500 focus:ring-cyan-500">
+          <div>
+            <div class="text-xs font-semibold text-white flex items-center gap-2">
+              Standalone / Mock Data Mode
+              <span class="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 rounded-full font-normal">Recommended for Demo</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">Runs completely in-browser with realistic municipal seed data and instant reactive updates. Zero backend dependency.</p>
+          </div>
+        </label>
+
+        <!-- Live Backend Mode -->
+        <label class="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-slate-950/60 cursor-pointer hover:border-cyan-500/40 transition-all">
+          <input type="radio" name="api-mode-radio" value="api" id="radio-mode-api" class="mt-1 text-cyan-500 focus:ring-cyan-500">
+          <div class="flex-1">
+            <div class="text-xs font-semibold text-white">Connect to Backend API (docs/API_CONTRACT.md)</div>
+            <p class="text-[11px] text-slate-400 mt-0.5">Connects dynamically to FastAPI endpoints at your configured URL.</p>
+            <div class="mt-2.5">
+              <label class="text-[11px] text-slate-400 block mb-1">Backend Base URL:</label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="input-api-url" value="http://localhost:8000" class="flex-1 bg-slate-900 border border-white/15 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+                <button type="button" onclick="testBackendConnection()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition-all">Test</button>
+              </div>
+              <div id="test-connection-result" class="text-[11px] mt-1.5 hidden"></div>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- Quick Reset Seed Data -->
+      <div class="pt-3 border-t border-white/10 flex items-center justify-between">
+        <button onclick="handleResetSeedData()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reset to Factory Seed Data
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button onclick="closeApiSettingsModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white">Cancel</button>
+          <button onclick="saveApiSettings()" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-black shadow-md shadow-cyan-500/20">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: New Quick Complaint Modal (for live demo testing) -->
+  <div id="modal-new-complaint" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i> Report New Civic Issue (Citizen Simulation)
+        </h3>
+        <button onclick="closeNewComplaintModal()" class="p-1 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleNewComplaintSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="text-xs font-medium text-slate-300 block mb-1">Issue Description</label>
+          <textarea id="new-comp-desc" required rows="3" placeholder="e.g. Broken water main line flooding the pedestrian crossing..." class="w-full bg-slate-950 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyan-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-medium text-slate-300 block mb-1">Issue Category</label>
+            <select id="new-comp-category" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-xs text-white">
+              <option value="POTHOLE">Pothole / Road Damage</option>
+              <option value="GARBAGE">Garbage / Waste Overflow</option>
+              <option value="WATER_LEAKAGE">Water Pipeline Leak</option>
+              <option value="STREET_LIGHT">Street Light Failure</option>
+              <option value="DRAINAGE">Drainage / Open Manhole</option>
+              <option value="ILLEGAL_DUMPING">Illegal Debris Dumping</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-medium text-slate-300 block mb-1">Initial Severity</label>
+            <select id="new-comp-severity" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-xs text-white">
+              <option value="CRITICAL">Critical (4h SLA)</option>
+              <option value="HIGH">High (12h SLA)</option>
+              <option value="MEDIUM" selected>Medium (24h SLA)</option>
+              <option value="LOW">Low (48h SLA)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-slate-300 block mb-1">Location Landmark</label>
+          <input type="text" id="new-comp-location" required value="Shivaji Chowk, Main Intersection" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-xs text-white">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-white/10">
+          <button type="button" onclick="closeNewComplaintModal()" class="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-black">Submit & Trigger AI Agent</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/seedData.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    // Initialize Lucide icons on initial load
+    lucide.createIcons();
+  </script>
+</body>
+</html>
