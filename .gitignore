@@ -1,1 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 
+# Virtual Environments
+venv/
+env/
+ENV/
+backend/venv/
+
+# SQLite Database files
+*.db
+*.sqlite
+*.sqlite3
+civic_issues.db
+backend/civic_issues.db
