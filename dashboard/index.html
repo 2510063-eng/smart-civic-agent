@@ -309,10 +309,22 @@
         </div>
       </div>
 
-      <!-- Verification Cards List -->
-      <div id="verification-cards-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Dynamically populated via JS -->
-      </div>
+              <!-- Export Buttons and Header -->
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xl font-bold text-white">Verification Studio</h2>
+          <div class="flex gap-2">
+            <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-sm">Export CSV</button>
+            <button onclick="exportToJSON()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm">Export JSON</button>
+          </div>
+        </div>
+        <!-- Before/After Slider Container -->
+        <div id="before-after-slider" class="relative w-full max-w-3xl mx-auto h-96 bg-gray-800 rounded-lg overflow-hidden">
+          <!-- Images injected by slider.js -->
+        </div>
+        <!-- Verification Cards List -->
+        <div id="verification-cards-container" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Dynamically populated via JS -->
+        </div>
     </div>
 
     <!-- ==================== TAB 4: MUNICIPAL ANALYTICS ==================== -->
