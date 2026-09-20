@@ -1,1 +1,1 @@
-# smart-sivic-agent
+# smart-civic-agent
