@@ -18,6 +18,11 @@ from app.schemas import (
     AgentActionResponse,
     AgentActionHistoryResponse,
     AdminStatsResponse,
+    SLACheckResponse,
+    FollowUpRequest,
+    FollowUpResponse,
+    EscalateRequest,
+    EscalateResponse,
     ErrorResponse,
 )
 from app.services import agent_service, complaint_service, ai_service
@@ -87,22 +92,181 @@ def get_admin_stats(
 
 @router.post(
     "/agent/sla-check",
-    summary="[Scaffold] Check SLA deadlines and trigger follow-up/escalation",
+    response_model=SLACheckResponse,
+    summary="Check SLA deadlines and trigger follow-up/escalation",
     status_code=status.HTTP_200_OK,
 )
 def run_sla_check(
     db: Session = Depends(get_db),
 ):
     """
-    Scaffold for periodic SLA monitoring.
-    Full background scheduling and automatic escalation belongs to Milestone 2.
+    Periodic SLA monitoring engine:
+    - Identifies active complaints whose SLA deadline has passed.
+    - Evaluates priority/history:
+      - Critical or already reminded -> ESCALATE.
+      - First breach -> FOLLOW_UP.
+    - Records AgentAction for every autonomous decision.
     """
-    return {
-        "checked": 0,
-        "breached": 0,
-        "actions_taken": [],
-        "message": "SLA check monitor scaffold ready (scheduled for Milestone 2)",
-    }
+    result = complaint_service.check_sla_and_process(db)
+    return SLACheckResponse(**result)
+
+
+@router.post(
+    "/agent/follow-up",
+    response_model=FollowUpResponse,
+    summary="Trigger follow-up for a complaint",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": FollowUpResponse, "description": "Follow-up initiated"},
+        400: {"model": ErrorResponse, "description": "Missing complaint_id"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def trigger_follow_up(
+    payload: FollowUpRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Triggers an autonomous or manual follow-up reminder for an unresolved complaint.
+    Updates status to 'FOLLOW_UP' and records action in audit timeline.
+    """
+    if not payload.complaint_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "complaint_id is required in request body", "code": "MISSING_COMPLAINT_ID"},
+        )
+    complaint = complaint_service.follow_up_complaint(
+        db=db,
+        complaint_id=payload.complaint_id,
+        reason=payload.reason,
+    )
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    return FollowUpResponse(
+        complaint_id=complaint.complaint_id,
+        action="FOLLOW_UP",
+        status=complaint.status,
+        message="Follow-up initiated",
+    )
+
+
+@router.post(
+    "/agent/follow-up/{complaint_id}",
+    response_model=FollowUpResponse,
+    summary="Trigger follow-up for a complaint by ID path",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": FollowUpResponse, "description": "Follow-up initiated"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def trigger_follow_up_by_id(
+    complaint_id: str,
+    payload: Optional[FollowUpRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Triggers follow-up for a complaint specified via URL path.
+    """
+    reason = payload.reason if payload else "Complaint has not been updated within SLA"
+    complaint = complaint_service.follow_up_complaint(
+        db=db,
+        complaint_id=complaint_id,
+        reason=reason,
+    )
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    return FollowUpResponse(
+        complaint_id=complaint.complaint_id,
+        action="FOLLOW_UP",
+        status=complaint.status,
+        message="Follow-up initiated",
+    )
+
+
+@router.post(
+    "/agent/escalate",
+    response_model=EscalateResponse,
+    summary="Trigger escalation for a complaint",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": EscalateResponse, "description": "Escalation initiated"},
+        400: {"model": ErrorResponse, "description": "Missing complaint_id"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def trigger_escalate(
+    payload: EscalateRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Escalates an unresolved complaint due to SLA breach or severe priority.
+    Updates status to 'ESCALATED' and records action in audit timeline.
+    """
+    if not payload.complaint_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "complaint_id is required in request body", "code": "MISSING_COMPLAINT_ID"},
+        )
+    complaint = complaint_service.escalate_complaint(
+        db=db,
+        complaint_id=payload.complaint_id,
+        reason=payload.reason,
+    )
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{payload.complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    return EscalateResponse(
+        complaint_id=complaint.complaint_id,
+        action="ESCALATE",
+        status=complaint.status,
+        message="Complaint escalated to higher authority",
+    )
+
+
+@router.post(
+    "/agent/escalate/{complaint_id}",
+    response_model=EscalateResponse,
+    summary="Trigger escalation for a complaint by ID path",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": EscalateResponse, "description": "Escalation initiated"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def trigger_escalate_by_id(
+    complaint_id: str,
+    payload: Optional[EscalateRequest] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Escalates a complaint specified via URL path.
+    """
+    reason = payload.reason if payload else "SLA breached without resolution"
+    complaint = complaint_service.escalate_complaint(
+        db=db,
+        complaint_id=complaint_id,
+        reason=reason,
+    )
+    if not complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    return EscalateResponse(
+        complaint_id=complaint.complaint_id,
+        action="ESCALATE",
+        status=complaint.status,
+        message="Complaint escalated to higher authority",
+    )
 
 
 @router.post(
@@ -116,8 +280,8 @@ def analyze_complaint_adapter(
     """
     Adapter endpoint that routes to ai_service.AIServiceAdapter.
     
-    NOTE: In Milestone 1, this returns deterministic stub data.
-    In Milestone 2, this will route directly to Faik's AI Agent Brain in ai-agent/.
+    NOTE: In Milestone 1 & 2, this returns deterministic stub data.
+    When Faik integrates ai-agent/, this routes directly to the AI Brain.
     """
     result = ai_service.analyze_complaint(
         complaint_id=payload.complaint_id,

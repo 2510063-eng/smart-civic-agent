@@ -19,6 +19,12 @@ from app.schemas import (
     ComplaintResponse,
     ComplaintCreatedResponse,
     ComplaintListResponse,
+    StatusUpdateRequest,
+    StatusUpdateResponse,
+    ResolveRequest,
+    ResolveResponse,
+    VerifyRequest,
+    VerifyResponse,
     ErrorResponse,
 )
 from app.services import complaint_service
@@ -120,61 +126,112 @@ def get_complaint(
     return ComplaintResponse.model_validate(complaint)
 
 
+@router.patch(
+    "/{complaint_id}/status",
+    response_model=StatusUpdateResponse,
+    summary="Update complaint lifecycle status",
+    responses={
+        200: {"model": StatusUpdateResponse, "description": "Status updated successfully"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
+)
+def update_status(
+    complaint_id: str,
+    payload: StatusUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Updates the lifecycle status of a complaint (e.g. IN_PROGRESS, ASSIGNED, ESCALATED).
+    Records an AgentAction audit log entry for the state transition.
+    """
+    updated_complaint = complaint_service.update_complaint_status(
+        db=db,
+        complaint_id=complaint_id,
+        new_status=payload.status,
+        reason=payload.reason,
+    )
+    if not updated_complaint:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
+        )
+    return StatusUpdateResponse(
+        complaint_id=updated_complaint.complaint_id,
+        status=updated_complaint.status,
+        message="Status updated successfully",
+    )
+
+
 # ---------------------------------------------------------------------------
-# Milestone 2 Scaffolding (Worker Resolution & Verification)
+# Worker Resolution & AI Verification Endpoints
 # ---------------------------------------------------------------------------
 
 @router.post(
     "/{complaint_id}/resolve",
-    summary="[Scaffold] Worker submits resolution proof",
+    response_model=ResolveResponse,
+    summary="Worker submits resolution proof",
     status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": ResolveResponse, "description": "Resolution submitted"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
 )
 def resolve_complaint(
     complaint_id: str,
+    payload: ResolveRequest,
     db: Session = Depends(get_db),
 ):
     """
-    Scaffold for Worker Resolution submission.
-    Full implementation scheduled for Milestone 2.
+    Field worker or department marks issue as resolved and submits proof.
+    Transitions status to 'VERIFICATION' and logs RESOLVE_SUBMITTED agent action.
     """
-    complaint = complaint_service.get_complaint_by_id(db, complaint_id)
+    complaint = complaint_service.resolve_complaint(
+        db=db,
+        complaint_id=complaint_id,
+        resolution_description=payload.resolution_description,
+        after_image_url=payload.after_image_url,
+    )
     if not complaint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
         )
-    return {
-        "complaint_id": complaint_id,
-        "status": "VERIFICATION",
-        "message": "Resolution submitted for verification (Milestone 2 scaffold)",
-        "milestone": "Milestone 2",
-    }
+    return ResolveResponse(
+        complaint_id=complaint.complaint_id,
+        status=complaint.status,
+        message="Resolution submitted for verification",
+    )
 
 
 @router.post(
     "/{complaint_id}/verify",
-    summary="[Scaffold] Trigger AI resolution verification",
+    response_model=VerifyResponse,
+    summary="Trigger AI resolution verification",
     status_code=status.HTTP_200_OK,
+    responses={
+        200: {"model": VerifyResponse, "description": "Verification outcome"},
+        404: {"model": ErrorResponse, "description": "Complaint not found"},
+    },
 )
 def verify_complaint(
     complaint_id: str,
+    payload: VerifyRequest,
     db: Session = Depends(get_db),
 ):
     """
-    Scaffold for AI Before/After resolution verification.
-    Full implementation scheduled for Milestone 2.
+    Triggers AI Before/After verification of the resolution.
+    - If PASSED: Status becomes 'CLOSED'.
+    - If FAILED: Status becomes 'REOPENED'.
+    Records VERIFY_RESOLUTION agent action in audit timeline.
     """
-    complaint = complaint_service.get_complaint_by_id(db, complaint_id)
+    complaint, verify_data = complaint_service.verify_complaint(
+        db=db,
+        complaint_id=complaint_id,
+        after_image_url=payload.after_image_url,
+    )
     if not complaint:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": f"Complaint '{complaint_id}' not found", "code": "COMPLAINT_NOT_FOUND"},
         )
-    return {
-        "complaint_id": complaint_id,
-        "verification": "PASSED",
-        "confidence": 0.50,
-        "reason": "Scaffold: Visual comparison stub for Milestone 1",
-        "next_status": "CLOSED",
-        "milestone": "Milestone 2",
-    }
+    return VerifyResponse(**verify_data)

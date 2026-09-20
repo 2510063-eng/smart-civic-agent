@@ -99,12 +99,24 @@ class AIServiceAdapter:
     ) -> Dict[str, Any]:
         """
         Stub interface for AI Before/After resolution verification.
+        Supports testing both PASSED and FAILED paths based on image keyword.
         """
+        # Deterministic simulation for test verification
+        if after_image_url and ("fail" in after_image_url.lower() or "unresolved" in after_image_url.lower()):
+            return {
+                "complaint_id": complaint_id,
+                "verification": "FAILED",
+                "confidence": 0.82,
+                "reason": "STUB: Road damage or defect is still visible in verification image.",
+                "next_status": "REOPENED",
+                "is_stub": True,
+            }
+
         return {
             "complaint_id": complaint_id,
             "verification": "PASSED",
-            "confidence": 0.50,
-            "reason": "STUB: Visual comparison stub passing by default for testing.",
+            "confidence": 0.91,
+            "reason": "STUB: After-image shows repaired civic infrastructure.",
             "next_status": "CLOSED",
             "is_stub": True,
         }

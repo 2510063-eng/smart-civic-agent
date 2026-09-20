@@ -133,3 +133,76 @@ class ErrorResponse(BaseModel):
     success: bool = False
     error: str
     code: str
+
+
+# ---------------------------------------------------------------------------
+# Workflow & Lifecycle Schemas
+# ---------------------------------------------------------------------------
+
+class StatusUpdateRequest(BaseModel):
+    status: str = Field(..., description="Target lifecycle status")
+    reason: Optional[str] = Field(None, description="Reason for status transition")
+
+
+class StatusUpdateResponse(BaseModel):
+    complaint_id: str
+    status: str
+    message: str
+
+
+class ResolveRequest(BaseModel):
+    resolution_description: str = Field(..., description="Description of the fix/resolution work done")
+    after_image_url: Optional[str] = Field(None, description="URL/path of the resolution evidence photo")
+
+
+class ResolveResponse(BaseModel):
+    complaint_id: str
+    status: str
+    message: str
+
+
+class VerifyRequest(BaseModel):
+    after_image_url: Optional[str] = Field(None, description="URL/path of after image to verify against initial evidence")
+
+
+class VerifyResponse(BaseModel):
+    complaint_id: str
+    verification: str
+    confidence: float
+    reason: str
+    next_status: str
+
+
+class SLAActionTaken(BaseModel):
+    complaint_id: str
+    action: str
+
+
+class SLACheckResponse(BaseModel):
+    checked: int
+    breached: int
+    actions_taken: List[SLAActionTaken]
+
+
+class FollowUpRequest(BaseModel):
+    complaint_id: Optional[str] = Field(None, description="Complaint ID if not provided in URL path")
+    reason: Optional[str] = Field("Complaint has not been updated within SLA", description="Follow-up reason")
+
+
+class FollowUpResponse(BaseModel):
+    complaint_id: str
+    action: str
+    status: str
+    message: str
+
+
+class EscalateRequest(BaseModel):
+    complaint_id: Optional[str] = Field(None, description="Complaint ID if not provided in URL path")
+    reason: Optional[str] = Field("SLA breached without resolution", description="Escalation reason")
+
+
+class EscalateResponse(BaseModel):
+    complaint_id: str
+    action: str
+    status: str
+    message: str
