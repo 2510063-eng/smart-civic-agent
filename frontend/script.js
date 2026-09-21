@@ -126,6 +126,7 @@ let selectedSeverity = 'HIGH';
 
 const DEMO_PRESETS = {
   pothole: {
+    id: "CIV-2026-00124",
     category: "Pothole",
     title: "Large pothole near college gate",
     desc: "Large pothole near college gate. Vehicles are having difficulty passing through it and two-wheelers are swerving dangerously into oncoming traffic.",
@@ -140,10 +141,20 @@ const DEMO_PRESETS = {
     severity: "HIGH",
     priority: "87/100",
     department: "Roads & Infrastructure",
+    deptName: "Roads & Municipal Infrastructure",
+    officerName: "Er. Sunil Deshmukh (Exec Engineer)",
+    fieldCrew: "Rapid Response Asphalt Unit #12 (Van #12, 4 Crew)",
+    wardZone: "Zone 4 (North Ward) • Beat 18",
+    helpline: "1800-233-CIVIC (Ext 402)",
+    priorityScore: 87,
+    riskSafety: "8.8 / 10",
+    riskTraffic: "Severe",
+    riskSla: "48h Breach Rule",
     sla: 48,
     duplicateInfo: "No nearby matching complaint"
   },
   garbage: {
+    id: "CIV-2026-00072",
     category: "Garbage",
     title: "Overflowing commercial garbage dump",
     desc: "Severe garbage accumulation overflowing on pedestrian pathway behind market plaza. Causing foul odor and stray animals gathering.",
@@ -158,10 +169,20 @@ const DEMO_PRESETS = {
     severity: "MEDIUM",
     priority: "74/100",
     department: "Solid Waste Management",
+    deptName: "Solid Waste Management Division",
+    officerName: "Dr. Ananya Roy (Chief Sanitation Officer)",
+    fieldCrew: "Mechanized Evacuation Unit #07 (Compactor #03)",
+    wardZone: "East Ward • Sector 2 (Beat 04)",
+    helpline: "1800-233-CIVIC (Ext 210)",
+    priorityScore: 74,
+    riskSafety: "6.5 / 10",
+    riskTraffic: "Moderate",
+    riskSla: "24h Escalation Rule",
     sla: 24,
     duplicateInfo: "Clustered with 1 neighborhood report (Merged context)"
   },
   streetlight: {
+    id: "CIV-2026-00054",
     category: "Streetlight",
     title: "Damaged streetlight near crossing",
     desc: "High mast streetlight pole #48 fixture shattered after storm, dangling wires exposed creating a dangerous dark blindspot.",
@@ -176,10 +197,20 @@ const DEMO_PRESETS = {
     severity: "CRITICAL",
     priority: "92/100",
     department: "Electrical & Public Lighting",
+    deptName: "Electrical & Public Lighting Dept",
+    officerName: "Eng. Vikram Mehta (Lighting Superintendent)",
+    fieldCrew: "Cherry-Picker Unit #19 & Line Specialists",
+    wardZone: "West Zone • Grid 7 (Crossing 7)",
+    helpline: "1800-233-CIVIC (Ext 118)",
+    priorityScore: 92,
+    riskSafety: "9.4 / 10",
+    riskTraffic: "Critical Blindspot",
+    riskSla: "12h Emergency SLA",
     sla: 12,
     duplicateInfo: "No nearby matching complaint"
   },
   water: {
+    id: "CIV-2026-00089",
     category: "Water Leakage",
     title: "Burst water supply pipe",
     desc: "Major drinking water pipeline rupture under pavement. High pressure clean water flooding roadway and eroding foundation.",
@@ -194,10 +225,20 @@ const DEMO_PRESETS = {
     severity: "CRITICAL",
     priority: "95/100",
     department: "Water Supply & Sewerage Board",
+    deptName: "Water Supply & Sewerage Board",
+    officerName: "Er. Ramesh Kulkarni (Hydraulic Engineer)",
+    fieldCrew: "Emergency Pipeline Squad #02",
+    wardZone: "Central Ward • Zone 1 (Main Ave)",
+    helpline: "1800-233-CIVIC (Ext 305)",
+    priorityScore: 95,
+    riskSafety: "9.6 / 10",
+    riskTraffic: "Roadway Flooding",
+    riskSla: "12h Critical SLA",
     sla: 12,
     duplicateInfo: "No nearby matching complaint"
   },
   drainage: {
+    id: "CIV-2026-00103",
     category: "Drainage",
     title: "Clogged stormwater drainage culvert",
     desc: "Stormwater culvert covered in silt, construction debris and trash. Blackwater backing up and flooding sidewalk during light rain.",
@@ -212,10 +253,20 @@ const DEMO_PRESETS = {
     severity: "HIGH",
     priority: "84/100",
     department: "Stormwater & Drainage Division",
+    deptName: "Stormwater & Drainage Division",
+    officerName: "Er. Priya Joshi (Drainage Operations Head)",
+    fieldCrew: "Hydro-Jetting & Silt Evacuation Truck #08",
+    wardZone: "South Ward • Drainage Division (Beat 11)",
+    helpline: "1800-233-CIVIC (Ext 422)",
+    priorityScore: 84,
+    riskSafety: "8.2 / 10",
+    riskTraffic: "Sidewalk Inundation",
+    riskSla: "24h Breach Rule",
     sla: 24,
     duplicateInfo: "No nearby matching complaint"
   },
   other: {
+    id: "CIV-2026-00037",
     category: "Other",
     title: "Damaged pedestrian safety barrier",
     desc: "Metal pedestrian barrier detached with sharp jagged edge near school playground. Concrete pavement slabs broken and uneven.",
@@ -230,6 +281,15 @@ const DEMO_PRESETS = {
     severity: "MEDIUM",
     priority: "68/100",
     department: "Municipal Civil Works & Parks",
+    deptName: "Municipal Civil Works & Parks",
+    officerName: "Shri A. K. Verma (Public Works Director)",
+    fieldCrew: "Civil Works Rapid Repair Squad #05",
+    wardZone: "Ward 8 • Public Works Beat",
+    helpline: "1800-233-CIVIC (Ext 101)",
+    priorityScore: 68,
+    riskSafety: "5.8 / 10",
+    riskTraffic: "Pedestrian Hazard",
+    riskSla: "48h Standard SLA",
     sla: 48,
     duplicateInfo: "No nearby matching complaint"
   }
@@ -1221,30 +1281,42 @@ window.runAnalysisPipeline = async function() {
     progressStep.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> <span class="text-emerald-300 font-medium">Autonomous Swarm Dispatch Complete</span>`;
   }
 
-  // Build the structured complaint using user choices
+  // Generate dynamic complaint reference ID
+  const complaintId = generateComplaintId();
+
+  // Build the structured complaint using user choices & enriched authority presets
   const effectiveSeverity = selectedSeverity || preset.severity;
-  const effectivePriority = effectiveSeverity === "CRITICAL" ? "95/100" :
-                            effectiveSeverity === "HIGH" ? "87/100" :
-                            effectiveSeverity === "MEDIUM" ? "74/100" : "42/100";
+  const effectiveScore = effectiveSeverity === "CRITICAL" ? 95 :
+                         effectiveSeverity === "HIGH" ? 87 :
+                         effectiveSeverity === "MEDIUM" ? 74 : 42;
+  const effectivePriority = `${effectiveScore}/100`;
 
   currentComplaint = {
-    id: "CIV-2026-00124",
+    id: complaintId,
     issue: preset.expectedIssue || (preset.category + " Issue"),
-    confidence: preset.confidence,
+    confidence: preset.confidence || "95%",
     severity: effectiveSeverity,
     priority: effectivePriority,
+    priorityScore: effectiveScore,
     department: preset.department,
+    deptName: preset.deptName || preset.department,
+    officerName: preset.officerName || "Er. Sunil Deshmukh (Exec Engineer)",
+    fieldCrew: preset.fieldCrew || "Rapid Response Asphalt Unit #12 (Van #12, 4 Crew)",
+    wardZone: preset.wardZone || "Zone 4 (North Ward) • Beat 18",
+    helpline: preset.helpline || "1800-233-CIVIC (Ext 402)",
+    riskSafety: preset.riskSafety || "8.8 / 10",
+    riskTraffic: preset.riskTraffic || "Severe Disruption",
+    riskSla: preset.riskSla || "48h Breach Rule",
     location: location,
-    duplicateInfo: preset.duplicateInfo,
-    status: "SUBMITTED",
-    slaHours: preset.sla,
+    duplicateInfo: preset.duplicateInfo || "No nearby matching complaint",
+    status: "ASSIGNED", // AI Swarm directly triages & routes to department
+    slaHours: preset.sla || 48,
     repairProof: preset.repairProof,
-    currentStep: 5 // 5 nodes completed out of tracking timeline
+    currentStep: 3
   };
 
   // Render structured card & tracking controls
   renderStructuredComplaintCard(currentComplaint);
-  renderTrackingTimeline(currentComplaint.currentStep);
   startSlaCountdown(currentComplaint.slaHours);
 
   // Restore button
@@ -1267,6 +1339,12 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Generate unique Complaint Reference ID
+function generateComplaintId() {
+  const randNum = Math.floor(10000 + Math.random() * 90000);
+  return `CIV-2026-${randNum}`;
+}
+
 // ==========================================
 // 8. Structured Complaint Card & SLA Timer
 // ==========================================
@@ -1275,26 +1353,84 @@ function renderStructuredComplaintCard(c) {
   if (!sec) return;
   sec.classList.remove("hidden");
 
-  // Fill card fields
-  document.getElementById("res-cid").innerText = c.id;
-  document.getElementById("res-issue").innerText = c.issue;
-  document.getElementById("res-confidence").innerText = c.confidence;
-  document.getElementById("res-severity").innerText = c.severity;
-  document.getElementById("res-priority").innerText = c.priority;
-  document.getElementById("res-department").innerText = c.department;
-  document.getElementById("res-location").innerText = c.location;
-  document.getElementById("res-duplicate").innerText = c.duplicateInfo;
-  document.getElementById("res-status").innerText = c.status;
+  // Fill complaint reference ID & basic fields
+  const cidEl = document.getElementById("res-cid");
+  if (cidEl) cidEl.innerText = c.id;
+  const trackInput = document.getElementById("input-track-cid");
+  if (trackInput) trackInput.value = c.id;
 
-  // Severity styling
-  const sevEl = document.getElementById("res-severity");
-  if (c.severity === "CRITICAL") {
-    sevEl.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40";
-  } else if (c.severity === "HIGH") {
-    sevEl.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
-  } else {
-    sevEl.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40";
+  const resIssue = document.getElementById("res-issue");
+  if (resIssue) resIssue.innerText = c.issue;
+  const resConf = document.getElementById("res-confidence");
+  if (resConf) resConf.innerText = c.confidence;
+  const resSev = document.getElementById("res-severity");
+  if (resSev) resSev.innerText = c.severity;
+  const resPri = document.getElementById("res-priority");
+  if (resPri) resPri.innerText = c.priority;
+  const resDept = document.getElementById("res-department");
+  if (resDept) resDept.innerText = c.department;
+  const resLoc = document.getElementById("res-location");
+  if (resLoc) resLoc.innerText = c.location;
+  const resDup = document.getElementById("res-duplicate");
+  if (resDup) resDup.innerText = c.duplicateInfo;
+  const resStat = document.getElementById("res-status");
+  if (resStat) resStat.innerText = c.status.replace(/_/g, ' ');
+
+  // Severity badge styling
+  if (resSev) {
+    if (c.severity === "CRITICAL") {
+      resSev.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40";
+    } else if (c.severity === "HIGH") {
+      resSev.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
+    } else {
+      resSev.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40";
+    }
   }
+
+  // Department & Authority Card Details
+  const authDept = document.getElementById("auth-dept-name");
+  if (authDept) authDept.innerText = c.deptName || c.department;
+  const authOfficer = document.getElementById("auth-officer-name");
+  if (authOfficer) authOfficer.innerText = c.officerName || "Er. Sunil Deshmukh (Exec Engineer)";
+  const authCrew = document.getElementById("auth-field-crew");
+  if (authCrew) authCrew.innerText = c.fieldCrew || "Rapid Response Asphalt Unit #12";
+  const authWard = document.getElementById("auth-ward-zone");
+  if (authWard) authWard.innerText = c.wardZone || "Zone 4 (North Ward) • Beat 18";
+  const authHelp = document.getElementById("auth-helpline");
+  if (authHelp) authHelp.innerText = c.helpline || "1800-233-CIVIC (Ext 402)";
+
+  // Priority & Risk Evaluation Card Details
+  const priBadge = document.getElementById("auth-priority-badge");
+  const priScore = document.getElementById("auth-priority-score");
+  const priGauge = document.getElementById("auth-priority-gauge");
+  const scoreNum = c.priorityScore || parseInt(c.priority) || 87;
+
+  if (priScore) priScore.innerText = `${scoreNum} / 100`;
+  if (priGauge) priGauge.style.width = `${scoreNum}%`;
+
+  if (priBadge) {
+    if (scoreNum >= 90) {
+      priBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40";
+      priBadge.innerText = "CRITICAL PRIORITY";
+    } else if (scoreNum >= 75) {
+      priBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40";
+      priBadge.innerText = "HIGH PRIORITY";
+    } else {
+      priBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40";
+      priBadge.innerText = "STANDARD PRIORITY";
+    }
+  }
+
+  const riskSafe = document.getElementById("auth-risk-safety");
+  if (riskSafe) riskSafe.innerText = c.riskSafety || "8.8 / 10";
+  const riskTraf = document.getElementById("auth-risk-traffic");
+  if (riskTraf) riskTraf.innerText = c.riskTraffic || "Severe";
+  const riskSla = document.getElementById("auth-risk-sla");
+  if (riskSla) riskSla.innerText = c.riskSla || "48h Breach Rule";
+
+  // Update 5-Stage Status Stepper and Milestone Timeline
+  updateStatusStepper(c.status);
+  renderTrackingTimeline(c.status);
 
   // Add to My Complaints if not already present
   const exists = myComplaintsList.find(x => x.id === c.id);
@@ -1307,12 +1443,14 @@ function renderStructuredComplaintCard(c) {
       severity: c.severity,
       priority: c.priority,
       status: c.status,
-      sla: `${c.slaHours}h Target`,
+      sla: `${c.slaHours || 48}h Target`,
       timestamp: "Just now",
-      activeStep: c.currentStep
+      activeStep: 3
     });
     renderMyComplaints();
   }
+
+  if (window.lucide) window.lucide.createIcons();
 
   // Smooth scroll to card
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1320,12 +1458,15 @@ function renderStructuredComplaintCard(c) {
 
 function startSlaCountdown(hours) {
   if (slaInterval) clearInterval(slaInterval);
-  slaRemainingSeconds = hours * 3600;
+  slaRemainingSeconds = (hours || 48) * 3600;
 
   function tick() {
     if (slaRemainingSeconds <= 0) {
-      document.getElementById("sla-timer-text").innerText = "SLA BREACHED";
-      document.getElementById("sla-timer-text").className = "text-rose-400 font-mono font-bold";
+      const timerEl = document.getElementById("sla-timer-text");
+      if (timerEl) {
+        timerEl.innerText = "SLA BREACHED";
+        timerEl.className = "text-rose-400 font-mono font-bold";
+      }
       clearInterval(slaInterval);
       return;
     }
@@ -1344,92 +1485,340 @@ function startSlaCountdown(hours) {
 }
 
 // ==========================================
-// 9. Status Tracking Timeline & Closed-Loop Simulation
+// 9. 5-Stage Complaint Status Timeline & Simulation
+// Canonical Lifecycle: Submitted → Under Review → Assigned → In Progress → Resolved
 // ==========================================
-const TRACKING_STEPS = [
-  { id: 1, label: "Complaint Submitted", desc: "Citizen request received" },
-  { id: 2, label: "Evidence Analyzed", desc: "Vision embeddings extracted" },
-  { id: 3, label: "Issue Classified", desc: "NLP & ontology classification" },
-  { id: 4, label: "Severity Determined", desc: "Danger matrix evaluated" },
-  { id: 5, label: "Department Assigned", desc: "Jurisdiction queue dispatched" },
-  { id: 6, label: "Worker Assignment", desc: "Field officer allocated" },
-  { id: 7, label: "Repair In Progress", desc: "On-site remediation underway" },
-  { id: 8, label: "AI Verification", desc: "Before/After proof validated" },
-  { id: 9, label: "Resolved", desc: "Closed-loop verification complete" }
+const COMPLAINT_STAGES = [
+  {
+    step: 1,
+    key: "SUBMITTED",
+    label: "Submitted",
+    sub: "Logged & Tagged",
+    desc: "Citizen complaint registered with GPS coordinates, media hash & timestamp.",
+    badgeClass: "badge-submitted",
+    progress: 20,
+    eta: "48 Hours SLA Active",
+    summary: "Citizen report logged and cryptographically tagged. Autonomous AI swarm initialized."
+  },
+  {
+    step: 2,
+    key: "UNDER_REVIEW",
+    label: "Under Review",
+    sub: "AI Vision Analyzed",
+    desc: "Autonomous Swarm evaluated defect dimensions, duplicate clusters & priority rating.",
+    badgeClass: "badge-under-review",
+    progress: 40,
+    eta: "Review Completed",
+    summary: "Computer vision analysis complete. Duplicate clustering cleared. Priority index computed."
+  },
+  {
+    step: 3,
+    key: "ASSIGNED",
+    label: "Assigned",
+    sub: "Field Crew Allocated",
+    desc: "Jurisdiction routed to Department Nodal Officer. Work order dispatched to field crew.",
+    badgeClass: "badge-assigned",
+    progress: 60,
+    eta: "Crew En Route",
+    summary: "Work order dispatched to Nodal Officer. Field unit assigned with SLA countdown active."
+  },
+  {
+    step: 4,
+    key: "IN_PROGRESS",
+    label: "In Progress",
+    sub: "Active Remediation",
+    desc: "On-site remediation underway. Field crew deployed with specialized materials.",
+    badgeClass: "badge-in-progress",
+    progress: 80,
+    eta: "Remediation Active",
+    summary: "Field crew on-site. Physical repairs actively executing."
+  },
+  {
+    step: 5,
+    key: "RESOLVED",
+    label: "Resolved",
+    sub: "Closed-Loop Verified",
+    desc: "Before/After computer vision verified (>90% threshold). Ticket certified closed.",
+    badgeClass: "badge-resolved",
+    progress: 100,
+    eta: "Resolution Certified",
+    summary: "AI vision verification confirmed 96% match. Ticket certified resolved in municipal database."
+  }
 ];
 
-function renderTrackingTimeline(currentStep) {
+function getStageIndex(statusKey) {
+  const norm = (statusKey || "").toUpperCase();
+  if (norm === "SUBMITTED") return 1;
+  if (norm === "UNDER_REVIEW") return 2;
+  if (norm === "ASSIGNED" || norm === "WORKER_ASSIGNED") return 3;
+  if (norm === "IN_PROGRESS" || norm === "IN_REPAIR" || norm === "VERIFYING") return 4;
+  if (norm === "RESOLVED") return 5;
+  if (norm === "REOPENED" || norm === "ESCALATED") return 3;
+  return 1;
+}
+
+function updateStatusStepper(statusKey) {
+  const activeStep = getStageIndex(statusKey);
+  const stage = COMPLAINT_STAGES.find(s => s.step === activeStep) || COMPLAINT_STAGES[0];
+  const isReopened = (statusKey || "").toUpperCase() === "REOPENED";
+
+  // Progress Bar Width & Label
+  const fill = document.getElementById("status-progress-fill");
+  if (fill) fill.style.width = `${stage.progress}%`;
+
+  const percentEl = document.getElementById("status-progress-percent");
+  if (percentEl) percentEl.innerText = isReopened ? "Reopened / Escalated" : `${stage.progress}% Complete`;
+
+  const countEl = document.getElementById("status-step-count");
+  if (countEl) countEl.innerText = `${activeStep}/5`;
+
+  // Status Badges
+  const badgeEl = document.getElementById("res-status-badge");
+  if (badgeEl) {
+    if (isReopened) {
+      badgeEl.className = "px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider badge-escalated inline-block";
+      badgeEl.innerText = "REOPENED & ESCALATED";
+    } else {
+      badgeEl.className = `px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider ${stage.badgeClass} inline-block`;
+      badgeEl.innerText = stage.key.replace(/_/g, ' ');
+    }
+  }
+
+  const resStat = document.getElementById("res-status");
+  if (resStat) {
+    resStat.innerText = isReopened ? "REOPENED (ESCALATED)" : stage.key.replace(/_/g, ' ');
+  }
+
+  // Summary Banner
+  const sumText = document.getElementById("status-live-summary-text");
+  if (sumText) {
+    if (isReopened) {
+      sumText.innerHTML = `<strong>Attention Required:</strong> Complaint reopened due to inspection variance. Auto-escalated to Zonal Chief Engineer.`;
+    } else {
+      sumText.innerHTML = `<strong>Current Milestone:</strong> ${stage.summary}`;
+    }
+  }
+
+  const etaBadge = document.getElementById("status-live-eta-badge");
+  if (etaBadge) {
+    etaBadge.innerText = isReopened ? "ESCALATION DISPATCHED" : `ETA: ${stage.eta}`;
+  }
+
+  // Update Stepper Nodes (Stage 1 to 5)
+  for (let i = 1; i <= 5; i++) {
+    const nodeEl = document.getElementById(`stage-node-${i}`);
+    if (!nodeEl) continue;
+
+    const s = COMPLAINT_STAGES[i - 1];
+    let iconContent = "";
+    let subColor = "text-slate-500";
+    let titleColor = "text-slate-400 font-medium";
+
+    if (i < activeStep) {
+      iconContent = `<div class="stepper-node is-done w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0"><i data-lucide="check" class="w-4 h-4 text-emerald-400"></i></div>`;
+      subColor = "text-emerald-400 font-mono";
+      titleColor = "text-slate-100 font-bold";
+    } else if (i === activeStep) {
+      if (isReopened) {
+        iconContent = `<div class="stepper-node w-9 h-9 rounded-full border-2 border-rose-500 bg-rose-500/20 text-rose-300 flex items-center justify-center text-xs font-bold shrink-0 animate-pulse"><i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i></div>`;
+        subColor = "text-rose-400 font-mono";
+        titleColor = "text-rose-200 font-bold";
+      } else {
+        iconContent = `<div class="stepper-node is-active w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span></div>`;
+        subColor = "text-cyan-400 font-mono";
+        titleColor = "text-cyan-300 font-bold";
+      }
+    } else {
+      iconContent = `<div class="stepper-node is-pending w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0"><span>${i}</span></div>`;
+      subColor = "text-slate-500 font-mono";
+      titleColor = "text-slate-400 font-medium";
+    }
+
+    nodeEl.innerHTML = `
+      ${iconContent}
+      <div class="min-w-0 flex-1 sm:flex-initial">
+        <span class="text-xs block ${titleColor}">${s.label}</span>
+        <span class="text-[10px] block ${subColor}">${s.sub}</span>
+      </div>
+    `;
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function renderTrackingTimeline(statusKey) {
   const container = document.getElementById("tracking-timeline-container");
   if (!container) return;
   container.innerHTML = "";
 
-  TRACKING_STEPS.forEach((step, idx) => {
-    const isDone = step.id < currentStep;
-    const isActive = step.id === currentStep;
-    const isPending = step.id > currentStep;
+  const activeStep = getStageIndex(statusKey);
+  const isReopened = (statusKey || "").toUpperCase() === "REOPENED";
+
+  COMPLAINT_STAGES.forEach((stage) => {
+    const isDone = stage.step < activeStep;
+    const isActive = stage.step === activeStep;
+    const isPending = stage.step > activeStep;
 
     const row = document.createElement("div");
-    row.className = "flex items-center gap-3 relative";
+    row.className = "p-3 rounded-xl border transition-all flex items-start gap-3 relative";
 
     let stateIcon = "";
     let stateColor = "";
+    let badgePill = "";
 
     if (isDone) {
-      stateIcon = `<div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 text-xs font-bold">✓</div>`;
-      stateColor = "text-slate-200";
+      row.className += " bg-slate-900/40 border-slate-800/80";
+      stateIcon = `<div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>`;
+      stateColor = "text-slate-200 font-semibold";
+      badgePill = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">COMPLETED</span>`;
     } else if (isActive) {
-      stateIcon = `<div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400 flex items-center justify-center shrink-0 text-xs font-bold animate-pulse shadow-[0_0_10px_#38bdf8]">●</div>`;
-      stateColor = "text-cyan-300 font-semibold";
+      if (isReopened) {
+        row.className += " bg-rose-950/30 border-rose-500/40 shadow-lg shadow-rose-950/50";
+        stateIcon = `<div class="w-7 h-7 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5 animate-pulse"><i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-rose-400"></i></div>`;
+        stateColor = "text-rose-200 font-bold";
+        badgePill = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-950/90 text-rose-300 border border-rose-500/50 animate-pulse">ESCALATED</span>`;
+      } else {
+        row.className += " bg-cyan-950/30 border-cyan-500/50 shadow-lg shadow-cyan-950/50";
+        stateIcon = `<div class="w-7 h-7 rounded-full bg-cyan-500/25 text-cyan-300 border border-cyan-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5 animate-pulse shadow-[0_0_12px_#38bdf8]">●</div>`;
+        stateColor = "text-cyan-300 font-bold";
+        badgePill = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/50">ACTIVE PHASE</span>`;
+      }
     } else {
-      stateIcon = `<div class="w-7 h-7 rounded-full bg-slate-800/80 text-slate-500 border border-slate-700 flex items-center justify-center shrink-0 text-xs font-bold">○</div>`;
-      stateColor = "text-slate-500";
+      row.className += " bg-slate-900/20 border-slate-800/50 opacity-60";
+      stateIcon = `<div class="w-7 h-7 rounded-full bg-slate-800/80 text-slate-500 border border-slate-700 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">${stage.step}</div>`;
+      stateColor = "text-slate-400";
+      badgePill = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-500 border border-slate-800">PENDING</span>`;
     }
 
     row.innerHTML = `
       ${stateIcon}
-      <div class="flex-1 min-w-0">
-        <p class="text-xs ${stateColor}">${step.label}</p>
-        <p class="text-[10px] text-slate-500 truncate">${step.desc}</p>
+      <div class="flex-1 min-w-0 space-y-0.5">
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-xs ${stateColor}">${stage.step}. ${stage.label}</p>
+          ${badgePill}
+        </div>
+        <p class="text-[11px] text-slate-400 leading-snug">${stage.desc}</p>
+        <span class="text-[10px] text-slate-500 font-mono block pt-0.5">${stage.eta}</span>
       </div>
     `;
 
     container.appendChild(row);
   });
+
+  if (window.lucide) window.lucide.createIcons();
 }
 
-// Closed-loop simulation button handlers
-window.simulateWorkerAssignment = function() {
-  if (!currentComplaint) return;
-  currentComplaint.currentStep = 6;
-  currentComplaint.status = "WORKER_ASSIGNED";
-  document.getElementById("res-status").innerText = "WORKER_ASSIGNED";
-  renderTrackingTimeline(currentComplaint.currentStep);
+// 1-Click Interactive Status Transition Handler for Hackathon Demos
+window.transitionStatus = function(statusKey) {
+  if (!currentComplaint) {
+    // If no complaint is loaded yet, load default preset
+    loadComplaintById("CIV-2026-00124");
+  }
+
+  currentComplaint.status = statusKey;
+  updateStatusStepper(statusKey);
+  renderTrackingTimeline(statusKey);
+
+  // Sync with My Complaints List
+  const found = myComplaintsList.find(c => c.id === currentComplaint.id);
+  if (found) {
+    found.status = statusKey;
+    renderMyComplaints();
+  }
+
+  const isReopened = statusKey === "REOPENED";
+  const stage = COMPLAINT_STAGES.find(s => s.key === statusKey);
+  const stageName = isReopened ? "Reopened & Escalated" : (stage ? stage.label : statusKey);
 
   addTraceLog({
     time: getTimestamp(),
-    agent: "Dispatch Agent",
-    msg: "Worker allocated: Field Officer Rajesh K. (Van #12, Zone 4 Asphalt Maintenance Unit)",
-    category: "DISPATCH"
+    agent: "Closed-Loop Orchestrator",
+    msg: `Status transition event: Complaint ${currentComplaint.id} updated to [${stageName}]. Verification loop active.`,
+    category: isReopened ? "ESCALATION" : statusKey === "RESOLVED" ? "RESOLVED" : "ROUTING"
   });
 
-  showToast("Worker Assigned", "Field Officer Rajesh K. (Van #12) dispatched to site.");
+  if (isReopened) {
+    showToast("Complaint Reopened & Escalated", `Ticket ${currentComplaint.id} auto-escalated to Zonal Chief Engineer.`);
+  } else {
+    showToast(`Status: ${stageName}`, `Complaint ${currentComplaint.id} transitioned to ${stageName}.`);
+  }
+
+  if (window.lucide) window.lucide.createIcons();
+};
+
+// Copy Complaint ID Helper
+window.copyComplaintId = function() {
+  const cid = currentComplaint ? currentComplaint.id : (document.getElementById("res-cid")?.innerText || "CIV-2026-00124");
+  navigator.clipboard.writeText(cid).then(() => {
+    const lbl = document.getElementById("copy-card-cid-label");
+    if (lbl) {
+      const orig = lbl.innerText;
+      lbl.innerText = "Copied!";
+      setTimeout(() => { lbl.innerText = orig; }, 2000);
+    }
+    showToast("Complaint ID Copied", `${cid} copied to clipboard.`);
+  });
+};
+
+// Switch / Load Complaint by ID
+window.loadComplaintById = function(cid) {
+  let foundPreset = Object.values(DEMO_PRESETS).find(p => p.id === cid);
+  if (!foundPreset) {
+    if (cid.includes("00124")) foundPreset = DEMO_PRESETS.pothole;
+    else if (cid.includes("00089")) foundPreset = DEMO_PRESETS.water;
+    else if (cid.includes("00054")) foundPreset = DEMO_PRESETS.streetlight;
+    else if (cid.includes("00072")) foundPreset = DEMO_PRESETS.garbage;
+    else if (cid.includes("00103")) foundPreset = DEMO_PRESETS.drainage;
+    else if (cid.includes("00037")) foundPreset = DEMO_PRESETS.other;
+  }
+
+  const p = foundPreset || DEMO_PRESETS.pothole;
+  currentComplaint = {
+    id: cid,
+    issue: p.expectedIssue || p.category,
+    confidence: p.confidence || "96%",
+    severity: p.severity,
+    priority: p.priority,
+    priorityScore: p.priorityScore || 87,
+    department: p.department,
+    deptName: p.deptName || p.department,
+    officerName: p.officerName || "Er. Sunil Deshmukh (Exec Engineer)",
+    fieldCrew: p.fieldCrew || "Rapid Response Asphalt Unit #12",
+    wardZone: p.wardZone || "Zone 4 (North Ward) • Beat 18",
+    helpline: p.helpline || "1800-233-CIVIC (Ext 402)",
+    riskSafety: p.riskSafety || "8.8 / 10",
+    riskTraffic: p.riskTraffic || "Severe",
+    riskSla: p.riskSla || "48h Breach Rule",
+    location: p.location,
+    duplicateInfo: p.duplicateInfo || "No nearby matching complaint",
+    status: cid === "CIV-2026-00054" ? "RESOLVED" : cid === "CIV-2026-00089" ? "IN_PROGRESS" : "ASSIGNED",
+    slaHours: p.sla || 48,
+    repairProof: p.repairProof,
+    currentStep: cid === "CIV-2026-00054" ? 5 : cid === "CIV-2026-00089" ? 4 : 3
+  };
+
+  renderStructuredComplaintCard(currentComplaint);
+  showToast("Loaded Complaint", `Switched to active ticket ${cid}`);
+};
+
+// Search Complaint by Input
+window.searchComplaintById = function() {
+  const input = document.getElementById("input-track-cid");
+  const query = input ? input.value.trim().toUpperCase() : "";
+  if (!query) {
+    showToast("Enter ID", "Please enter a Complaint Reference ID to search.");
+    return;
+  }
+  loadComplaintById(query);
+};
+
+// Closed-loop legacy simulation button handlers (tied to 5 stages)
+window.simulateWorkerAssignment = function() {
+  transitionStatus("ASSIGNED");
 };
 
 window.simulateRepair = function() {
-  if (!currentComplaint) return;
-  currentComplaint.currentStep = 7;
-  currentComplaint.status = "IN_REPAIR";
-  document.getElementById("res-status").innerText = "IN_REPAIR";
-  renderTrackingTimeline(currentComplaint.currentStep);
-
-  addTraceLog({
-    time: getTimestamp(),
-    agent: "Field Worker Daemon",
-    msg: "Worker checked in at GPS coordinates. Cold-mix bituminous asphalt repair underway.",
-    category: "REPAIR"
-  });
-
-  showToast("Repair In Progress", "Team is actively repairing the site.");
+  transitionStatus("IN_PROGRESS");
 };
 
 window.openUploadRepairProofModal = function() {
@@ -1451,10 +1840,7 @@ window.closeModal = function() {
 window.confirmProofUpload = function() {
   closeModal();
   if (!currentComplaint) return;
-  currentComplaint.currentStep = 8;
-  currentComplaint.status = "VERIFYING";
-  document.getElementById("res-status").innerText = "VERIFYING";
-  renderTrackingTimeline(currentComplaint.currentStep);
+  transitionStatus("IN_PROGRESS");
 
   addTraceLog({
     time: getTimestamp(),
@@ -1478,10 +1864,7 @@ window.executeVerification = async function(shouldPass) {
   const verScore = document.getElementById("verification-confidence-score");
 
   if (shouldPass) {
-    currentComplaint.status = "RESOLVED";
-    currentComplaint.currentStep = 9;
-    document.getElementById("res-status").innerText = "RESOLVED";
-    renderTrackingTimeline(9);
+    transitionStatus("RESOLVED");
 
     if (verResult) {
       verResult.className = "p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/40";
@@ -1501,10 +1884,7 @@ window.executeVerification = async function(shouldPass) {
 
     showToast("Issue Resolved!", "AI verification passed with 96% confidence.");
   } else {
-    currentComplaint.status = "REOPENED";
-    currentComplaint.currentStep = 6;
-    document.getElementById("res-status").innerText = "REOPENED (ESCALATED)";
-    renderTrackingTimeline(6);
+    transitionStatus("REOPENED");
 
     if (verResult) {
       verResult.className = "p-4 rounded-xl border border-rose-500/40 bg-rose-950/40";
@@ -1639,29 +2019,16 @@ function renderMyComplaints() {
 }
 
 window.viewComplaintDetails = function(cid) {
-  const item = myComplaintsList.find(x => x.id === cid);
-  if (!item) return;
-
-  // Set as current and switch to main report view to see details
-  currentComplaint = {
-    id: item.id,
-    issue: item.issue,
-    confidence: "95%",
-    severity: item.severity,
-    priority: item.priority,
-    department: item.dept,
-    location: item.location,
-    duplicateInfo: "No matching duplicate in sector",
-    status: item.status,
-    slaHours: 48,
-    repairProof: DEMO_PRESETS.pothole.repairProof,
-    currentStep: item.activeStep || 5
-  };
-
   switchTab('citizen-report');
-  renderStructuredComplaintCard(currentComplaint);
-  renderTrackingTimeline(currentComplaint.currentStep);
+  loadComplaintById(cid);
 };
+
+// Initial default complaint pre-render for seamless demo presentation
+window.addEventListener("DOMContentLoaded", () => {
+  if (!currentComplaint) {
+    loadComplaintById("CIV-2026-00124");
+  }
+});
 
 // ==========================================
 // 12. Helper Utilities

@@ -600,47 +600,196 @@
         <!-- ============================================== -->
         <div id="result-card-section" class="space-y-8 pt-4">
           
-          <!-- Section Divider Header -->
-          <div class="flex items-center gap-3">
-            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
-            <div class="px-4 py-1 rounded-full text-xs font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-2">
-              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
-              STRUCTURED COMPLAINT READY & ACTIVE
+          <!-- Section Divider Header with Complaint ID & Quick Search -->
+          <div class="glass-panel-glow p-4 sm:p-5 rounded-2xl border border-cyan-500/40 shadow-xl space-y-3">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center shrink-0">
+                  <i data-lucide="file-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs text-slate-400 font-mono uppercase">Official Reference ID:</span>
+                    <span id="res-cid" class="text-lg sm:text-xl font-mono font-extrabold text-white tracking-wider text-cyan-300">
+                      CIV-2026-00124
+                    </span>
+                    <button onclick="copyComplaintId()" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition-all flex items-center gap-1 cursor-pointer">
+                      <i data-lucide="copy" class="w-3 h-3"></i>
+                      <span id="copy-card-cid-label">Copy ID</span>
+                    </button>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
+                      AUTONOMOUS AGENT ACTIVE
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-0.5">
+                    Cryptographically logged & routed to municipal field dispatch
+                  </p>
+                </div>
+              </div>
+
+              <!-- Top Status Badge & Progress Pill -->
+              <div class="flex items-center gap-2 self-start md:self-auto">
+                <div class="text-right">
+                  <span class="text-[10px] uppercase text-slate-400 block font-mono">Current Status</span>
+                  <span id="res-status-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider badge-in-progress inline-block">
+                    IN PROGRESS
+                  </span>
+                </div>
+              </div>
             </div>
-            <div class="h-px flex-1 bg-gradient-to-r from-cyan-500/30 via-cyan-500/30 to-transparent"></div>
+
+            <!-- Quick Ticket Switcher / Lookup -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs">
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+                <span class="text-[10px] text-slate-400 uppercase font-mono shrink-0">Quick Presets:</span>
+                <button type="button" onclick="loadComplaintById('CIV-2026-00124')" class="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Pothole (CIV-00124)</button>
+                <button type="button" onclick="loadComplaintById('CIV-2026-00089')" class="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Water Leak (CIV-00089)</button>
+                <button type="button" onclick="loadComplaintById('CIV-2026-00054')" class="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Streetlight (CIV-00054)</button>
+                <button type="button" onclick="loadComplaintById('CIV-2026-00072')" class="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Garbage (CIV-00072)</button>
+              </div>
+
+              <!-- ID Search Box -->
+              <div class="flex items-center gap-1.5">
+                <input id="input-track-cid" type="text" placeholder="Lookup CIV-2026-XXXXX" class="bg-slate-900 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 w-44" />
+                <button type="button" onclick="searchComplaintById()" class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs cursor-pointer flex items-center gap-1">
+                  <i data-lucide="search" class="w-3 h-3"></i> Track
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- Left: Structured Complaint Card (7 cols) -->
-            <div class="lg:col-span-7 space-y-6">
-              <div class="glass-panel-glow p-6 sm:p-7 rounded-2xl border border-cyan-500/30 shadow-2xl relative">
-                
-                <!-- Card Header -->
-                <div class="flex items-center justify-between border-b border-slate-800 pb-4 flex-wrap gap-2">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center">
-                      <i data-lucide="file-check" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                      <span class="text-xs text-slate-400">Municipal Complaint Reference</span>
-                      <h3 id="res-cid" class="text-lg sm:text-xl font-mono font-bold text-white tracking-wider">
-                        CIV-2026-00124
-                      </h3>
-                    </div>
-                  </div>
+          <!-- ============================================== -->
+          <!-- 5-STAGE COMPLAINT STATUS TIMELINE & PROGRESS   -->
+          <!-- ============================================== -->
+          <div class="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-700/70 shadow-xl space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h4 class="font-bold text-base text-white flex items-center gap-2">
+                  <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
+                  Complaint Status Timeline
+                </h4>
+                <p class="text-xs text-slate-400">
+                  Closed-loop municipal lifecycle: <span class="text-cyan-300 font-semibold">Submitted → Under Review → Assigned → In Progress → Resolved</span>
+                </p>
+              </div>
 
-                  <!-- Status Chip -->
-                  <div class="text-right">
-                    <span class="text-[10px] uppercase text-slate-400 block">Lifecycle State</span>
-                    <span id="res-status" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400">
-                      SUBMITTED
-                    </span>
+              <!-- Progress Percentage & Active State -->
+              <div class="flex items-center gap-3">
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 font-mono block">PROGRESS</span>
+                  <span id="status-progress-percent" class="text-sm font-mono font-bold text-cyan-300">
+                    60% Complete
+                  </span>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center font-mono font-bold text-xs" id="status-step-count">
+                  3/5
+                </div>
+              </div>
+            </div>
+
+            <!-- Horizontal Multi-Step Progress Bar Line -->
+            <div class="relative pt-4 pb-2">
+              <!-- Connecting Background Line -->
+              <div class="absolute top-8 left-6 right-6 h-1 bg-slate-800 rounded-full z-0 hidden sm:block">
+                <div id="status-progress-fill" class="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-400 rounded-full transition-all duration-500" style="width: 60%;"></div>
+              </div>
+
+              <!-- 5 Status Milestones Grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 sm:gap-2 relative z-10" id="stepper-stages-container">
+                
+                <!-- Stage 1: Submitted -->
+                <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-1.5 p-2 sm:p-0 rounded-xl bg-slate-900/40 sm:bg-transparent border border-slate-800 sm:border-0" id="stage-node-1">
+                  <div class="stepper-node is-done w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                  </div>
+                  <div class="min-w-0 flex-1 sm:flex-initial">
+                    <span class="text-xs font-bold text-slate-100 block">Submitted</span>
+                    <span class="text-[10px] text-emerald-400/90 font-mono block">Logged & Tagged</span>
                   </div>
                 </div>
 
+                <!-- Stage 2: Under Review -->
+                <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-1.5 p-2 sm:p-0 rounded-xl bg-slate-900/40 sm:bg-transparent border border-slate-800 sm:border-0" id="stage-node-2">
+                  <div class="stepper-node is-done w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                  </div>
+                  <div class="min-w-0 flex-1 sm:flex-initial">
+                    <span class="text-xs font-bold text-slate-100 block">Under Review</span>
+                    <span class="text-[10px] text-purple-300 font-mono block">AI Analyzed</span>
+                  </div>
+                </div>
+
+                <!-- Stage 3: Assigned -->
+                <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-1.5 p-2 sm:p-0 rounded-xl bg-slate-900/40 sm:bg-transparent border border-slate-800 sm:border-0" id="stage-node-3">
+                  <div class="stepper-node is-active w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                  </div>
+                  <div class="min-w-0 flex-1 sm:flex-initial">
+                    <span class="text-xs font-bold text-cyan-300 block">Assigned</span>
+                    <span class="text-[10px] text-cyan-400 font-mono block">Field Crew Allocated</span>
+                  </div>
+                </div>
+
+                <!-- Stage 4: In Progress -->
+                <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-1.5 p-2 sm:p-0 rounded-xl bg-slate-900/40 sm:bg-transparent border border-slate-800 sm:border-0" id="stage-node-4">
+                  <div class="stepper-node is-pending w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                    <span>4</span>
+                  </div>
+                  <div class="min-w-0 flex-1 sm:flex-initial">
+                    <span class="text-xs font-medium text-slate-400 block">In Progress</span>
+                    <span class="text-[10px] text-slate-500 font-mono block">Remediation</span>
+                  </div>
+                </div>
+
+                <!-- Stage 5: Resolved -->
+                <div class="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-1.5 p-2 sm:p-0 rounded-xl bg-slate-900/40 sm:bg-transparent border border-slate-800 sm:border-0" id="stage-node-5">
+                  <div class="stepper-node is-pending w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0">
+                    <span>5</span>
+                  </div>
+                  <div class="min-w-0 flex-1 sm:flex-initial">
+                    <span class="text-xs font-medium text-slate-400 block">Resolved</span>
+                    <span class="text-[10px] text-slate-500 font-mono block">Closed-Loop Verified</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Active Phase Status Summary Banner -->
+            <div id="status-live-summary-bar" class="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/30 flex items-center justify-between flex-wrap gap-2 text-xs">
+              <div class="flex items-center gap-2 text-slate-300">
+                <i data-lucide="info" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+                <span id="status-live-summary-text">
+                  <strong>Current Milestone:</strong> Assigned to Roads & Infrastructure. Field Officer allocated with active SLA window.
+                </span>
+              </div>
+              <span id="status-live-eta-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">
+                ETA: 24 Hours
+              </span>
+            </div>
+          </div>
+
+          <!-- 2-Column Main Workspace -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Details, Department Authority, Priority (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+              
+              <!-- 1. Structured Complaint Card -->
+              <div class="glass-panel-glow p-6 rounded-2xl border border-cyan-500/30 shadow-2xl relative space-y-5">
+                
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                    <h4 class="font-bold text-sm text-white">Verified Issue Parameters</h4>
+                  </div>
+                  <span id="res-status" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400">
+                    ASSIGNED
+                  </span>
+                </div>
+
                 <!-- Card Details Grid -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 py-5 border-b border-slate-800/80 text-xs">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 py-1 border-b border-slate-800/80 text-xs">
                   <div>
                     <span class="text-slate-400 block mb-1">Detected Issue</span>
                     <span id="res-issue" class="font-bold text-slate-100 text-sm">Pothole</span>
@@ -669,11 +818,11 @@
                 </div>
 
                 <!-- Location & Duplicate Clustering Summary -->
-                <div class="space-y-3 pt-4 text-xs">
+                <div class="space-y-3 text-xs">
                   <div class="flex items-start gap-2 text-slate-300">
                     <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
                     <div>
-                      <span class="text-slate-400">Location:</span>
+                      <span class="text-slate-400">Geotagged Location:</span>
                       <p id="res-location" class="font-medium text-slate-200">Near College Gate, Sector 4, North Zone</p>
                     </div>
                   </div>
@@ -681,14 +830,14 @@
                   <div class="flex items-start gap-2 text-slate-300">
                     <i data-lucide="git-merge" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
                     <div>
-                      <span class="text-slate-400">Duplicate Check:</span>
+                      <span class="text-slate-400">Duplicate Clustering:</span>
                       <p id="res-duplicate" class="font-medium text-emerald-300">No nearby matching complaint</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- SLA Countdown Timer Widget -->
-                <div class="mt-6 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
+                <div class="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                       <i data-lucide="timer" class="w-4 h-4"></i>
@@ -707,51 +856,199 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 2. Department & Authority Information Card -->
+              <div class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center">
+                      <i data-lucide="building-2" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">Department & Nodal Authority</h4>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-950/80 text-blue-300 border border-blue-500/30">
+                    JURISDICTION VERIFIED
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <!-- Department -->
+                  <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Designated Department</span>
+                    <span id="auth-dept-name" class="font-bold text-slate-100 flex items-center gap-1.5">
+                      <i data-lucide="landmark" class="w-3.5 h-3.5 text-cyan-400"></i>
+                      Roads & Municipal Infrastructure
+                    </span>
+                    <span class="text-[10px] text-slate-500 block">Autonomous workflow routed</span>
+                  </div>
+
+                  <!-- Nodal Officer -->
+                  <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Nodal Officer In-Charge</span>
+                    <span id="auth-officer-name" class="font-bold text-slate-100 flex items-center gap-1.5">
+                      <i data-lucide="user-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                      Er. Sunil Deshmukh (Exec Engineer)
+                    </span>
+                    <span class="text-[10px] text-slate-500 block">Zonal Executive Head</span>
+                  </div>
+
+                  <!-- Field Unit -->
+                  <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Allocated Field Crew</span>
+                    <span id="auth-field-crew" class="font-bold text-slate-100 flex items-center gap-1.5">
+                      <i data-lucide="truck" class="w-3.5 h-3.5 text-amber-400"></i>
+                      Rapid Response Asphalt Unit #12
+                    </span>
+                    <span class="text-[10px] text-slate-500 block">Van #12 (4 Specialists allocated)</span>
+                  </div>
+
+                  <!-- Ward Jurisdiction -->
+                  <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Ward Jurisdiction</span>
+                    <span id="auth-ward-zone" class="font-bold text-slate-100 flex items-center gap-1.5">
+                      <i data-lucide="map" class="w-3.5 h-3.5 text-purple-400"></i>
+                      Zone 4 (North Ward) • Beat 18
+                    </span>
+                    <span class="text-[10px] text-slate-500 block">Municipal Grid Ref: NW-408</span>
+                  </div>
+                </div>
+
+                <!-- Contact & Escalation Helpline -->
+                <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="phone-call" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span class="text-slate-300">
+                      <strong>Department Helpline:</strong> <span id="auth-helpline">1800-233-CIVIC (Ext 402)</span>
+                    </span>
+                  </div>
+                  <span class="text-[10px] text-slate-400 font-mono">
+                    Direct VHF Dispatch: CH-04
+                  </span>
+                </div>
+              </div>
+
+              <!-- 3. Priority & Risk Assessment Card -->
+              <div class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                      <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="font-bold text-sm text-white">AI Priority & Risk Evaluation</h4>
+                  </div>
+                  <span id="auth-priority-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    HIGH PRIORITY
+                  </span>
+                </div>
+
+                <!-- Priority Score Gauge -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400 font-medium">Dynamic Municipal Priority Score</span>
+                    <span id="auth-priority-score" class="font-mono font-bold text-base text-amber-300">87 / 100</span>
+                  </div>
+                  <div class="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                    <div id="auth-priority-gauge" class="h-full priority-meter-gradient transition-all duration-500" style="width: 87%;"></div>
+                  </div>
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                    <span>0 (Low)</span>
+                    <span>50 (Medium)</span>
+                    <span>75 (High)</span>
+                    <span>100 (Critical)</span>
+                  </div>
+                </div>
+
+                <!-- Assessment Factors Grid -->
+                <div class="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
+                  <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block uppercase font-mono">Safety Risk</span>
+                    <span id="auth-risk-safety" class="font-bold text-rose-400 mt-0.5 block">8.8 / 10</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block uppercase font-mono">Traffic Impact</span>
+                    <span id="auth-risk-traffic" class="font-bold text-amber-400 mt-0.5 block">Severe</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
+                    <span class="text-[10px] text-slate-400 block uppercase font-mono">Escalation SLA</span>
+                    <span id="auth-risk-sla" class="font-bold text-emerald-400 mt-0.5 block">48h Breach Rule</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <!-- Right: Status Tracking & Closed-Loop Simulation Controls (5 cols) -->
+            <!-- Right Column: Status Tracking Timeline & Closed-Loop Controls (5 cols) -->
             <div class="lg:col-span-5 space-y-6">
               
-              <!-- Status Timeline -->
+              <!-- Status Timeline Container -->
               <div class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h4 class="font-bold text-sm text-white flex items-center gap-2">
-                    <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
-                    Closed-Loop Lifecycle Tracker
+                    <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+                    Milestone Progress Events
                   </h4>
-                  <span class="text-[11px] text-slate-400">Autonomous Follow-up</span>
+                  <span class="text-[11px] text-slate-400 font-mono">Autonomous Audit</span>
                 </div>
 
-                <div id="tracking-timeline-container" class="space-y-3.5">
-                  <!-- Rendered via script.js -->
+                <div id="tracking-timeline-container" class="space-y-3">
+                  <!-- Rendered dynamically via script.js -->
                 </div>
 
                 <!-- Closed-Loop Interactive Demo Simulation Action Bar -->
-                <div class="pt-4 border-t border-slate-800 space-y-2.5">
-                  <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                    Hackathon Demo Controls (Simulate Actions)
-                  </span>
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                      Hackathon Demo Controls (Transition Status)
+                    </span>
+                    <span class="text-[10px] font-mono text-cyan-400">Interactive Simulation</span>
+                  </div>
 
-                  <div class="grid grid-cols-2 gap-2">
-                    <button onclick="simulateWorkerAssignment()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                      <i data-lucide="user-check" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <!-- 5 Stage Step Buttons -->
+                  <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button type="button" onclick="transitionStatus('SUBMITTED')" class="px-2.5 py-2 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-left flex items-center gap-1.5 cursor-pointer">
+                      <span class="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold flex items-center justify-center">1</span>
+                      <span>Submitted</span>
+                    </button>
+
+                    <button type="button" onclick="transitionStatus('UNDER_REVIEW')" class="px-2.5 py-2 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-left flex items-center gap-1.5 cursor-pointer">
+                      <span class="w-4 h-4 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center">2</span>
+                      <span>Under Review</span>
+                    </button>
+
+                    <button type="button" onclick="transitionStatus('ASSIGNED')" class="px-2.5 py-2 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-left flex items-center gap-1.5 cursor-pointer">
+                      <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold flex items-center justify-center">3</span>
                       <span>Assign Worker</span>
                     </button>
 
-                    <button onclick="simulateRepair()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                      <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400"></i>
-                      <span>Simulate Repair</span>
+                    <button type="button" onclick="transitionStatus('IN_PROGRESS')" class="px-2.5 py-2 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-left flex items-center gap-1.5 cursor-pointer">
+                      <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center">4</span>
+                      <span>In Progress</span>
                     </button>
                   </div>
 
-                  <button onclick="openUploadRepairProofModal()" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-200 border border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                    <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
-                    <span>Upload Repair Proof (Before/After)</span>
+                  <!-- Complete & Verify / Upload Proof Button -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="button" onclick="openUploadRepairProofModal()" class="px-3 py-2.5 rounded-lg text-xs font-semibold bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-200 border border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
+                      <span>Upload Repair Proof</span>
+                    </button>
+
+                    <button type="button" onclick="transitionStatus('RESOLVED')" class="px-3 py-2.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-slate-950 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20">
+                      <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                      <span>Mark Resolved</span>
+                    </button>
+                  </div>
+
+                  <!-- Reopen & Escalate Button (For demonstration of closed-loop edge cases) -->
+                  <button type="button" onclick="transitionStatus('REOPENED')" class="w-full px-3 py-2 rounded-lg text-[11px] font-semibold bg-rose-950/40 hover:bg-rose-950/70 text-rose-300 border border-rose-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-rose-400"></i>
+                    <span>Simulate Reopen & Automated Escalation</span>
                   </button>
                 </div>
               </div>
             </div>
           </div>
+
 
           <!-- AI Resolution Verification Panel (Appears after proof upload) -->
           <div id="verification-results-panel" class="glass-panel-glow p-6 rounded-2xl border border-cyan-500/30 space-y-5">
