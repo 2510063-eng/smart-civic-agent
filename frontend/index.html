@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicResolve — Citizen Portal (Report & Track Civic Issues)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              500: '#06b6d4',
+              600: '#0891b2',
+              700: '#0e7490',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="bg-[#080d1a] text-slate-100 flex flex-col min-h-screen antialiased selection:bg-cyan-500 selection:text-white">
+
+  <!-- Application Header -->
+  <div id="app-header"></div>
+
+  <!-- Main View Area -->
+  <main class="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex items-center justify-center">
+    <div id="app-main" class="w-full"></div>
+  </main>
+
+  <!-- Footer Notice -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/60 py-4 px-4 text-center text-xs text-slate-500">
+    <p>CivicResolve AI • Citizen Reporting Frontend (Milestone 1 — Issue Intake & Preview)</p>
+  </footer>
+
+  <!-- Main Application Script (ES Module) -->
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
