@@ -1,128 +1,59 @@
-# Citizen Frontend — Milestone 1: Issue Intake & Preview
+# Smart Civic - AI-Powered Civic Issue Resolution Agent (Citizen Frontend)
 
-**Owner:** Samyak (Citizen Frontend)  
-**Module Directory:** `/frontend`  
-**Milestone:** 1 — Citizen Issue Reporting & Isolated Mock Perception
+> **Autonomous Closed-Loop Municipal Infrastructure Resolution Swarm**  
+> Built for 24-Hour AI Hackathon
 
----
-
-## 1. Overview & Architecture
-
-The Citizen Frontend is isolated completely within `/frontend`. It provides an intuitive, accessible citizen reporting interface with evidence upload, description input, manual location entry, and input validation.
-
-### Layered Separation
-```
-UI Components (IssueReportForm, ImageUploader, AnalysisResultModal, Header)
-   ↓
-Frontend Service Layer (analysisService.js)
-   ↓
-Adapter Layer (mockAnalysisAdapter.js)
-   ↓
-Mock Transport Source (mockAnalysisData.js)
-```
-
-The UI components depend strictly on domain TypeScript models (`CitizenReport`, `Evidence`, `LocationInput`, `AnalysisResult`). They never reference mock payload structures or backend transport representations directly.
+## Team Ownership
+- **Faik**: AI / Agent Brain
+- **Piyush**: Agentic Workflow / Backend
+- **Samyak**: Citizen Frontend Lead
+- **Jaydeep**: Admin Dashboard + Resolution Verification
 
 ---
 
-## 2. Directory Structure
+## Overview
+Smart Civic is an agentic AI system for multimodal civic hazard ingestion (potholes, garbage accumulation, damaged streetlights, pipeline bursts). Rather than acting as a simple complaint form or static chatbot, the frontend visualizes and drives a full autonomous closed-loop:
 
-```
-frontend/
-├── package.json                   # Frontend metadata and typecheck scripts
-├── tsconfig.json                  # TypeScript compiler options
-├── README.md                      # Milestone 1 documentation & integration guide
-├── index.html                     # Citizen Portal entry point
-├── css/
-│   └── styles.css                 # Custom styles & animations
-└── src/
-    ├── app.js                     # Main application bootstrap
-    ├── types/
-    │   └── index.ts               # Shared TypeScript domain interfaces
-    ├── models/
-    │   └── CitizenReport.js       # Domain model & input validator
-    ├── services/
-    │   ├── analysisService.js     # Analysis Service layer
-    │   ├── adapters/
-    │   │   └── mockAnalysisAdapter.js # Mock adapter mapping to AnalysisResult
-    │   └── mocks/
-    │       └── mockAnalysisData.js    # Mock payload for development
-    └── components/
-        ├── Header.js              # Top bar navigation & milestone badge
-        ├── ImageUploader.js       # Drag-and-drop, preview, replace/remove
-        ├── IssueReportForm.js     # Main reporting card & state manager
-        └── AnalysisResultModal.js # Mock perception preview modal
-```
+$$\text{EVIDENCE} \longrightarrow \text{DECISION} \longrightarrow \text{ACTION} \longrightarrow \text{MONITORING} \longrightarrow \text{VERIFICATION}$$
+
+### Agent Swarm Pipeline
+1. **Citizen Report**: Multimodal validation (photo, geo-coordinates, text description, voice transcription).
+2. **Evidence Agent**: Computer vision defect analysis and feature extraction.
+3. **Severity Agent**: Impact assessment and hazard priority calculation.
+4. **Duplicate Agent**: Geospatial 500m vector radius deduplication & clustering.
+5. **Department Routing Agent**: Municipal taxonomy classification (Roads, Sanitation, Lighting, Water Board).
+6. **Complaint Generation**: Cryptographic immutable ticket creation (`CIV-2026-XXXXX`).
+7. **Monitoring Agent**: Autonomous watchdog monitoring lifecycle milestones.
+8. **SLA Monitoring**: 48-Hour municipal guarantee countdown timer.
+9. **Resolution Verification**: Dual-photo before/after computer vision inspection (Resolved with 96% confidence vs. Reopened with automatic Chief Engineer escalation).
 
 ---
 
-## 3. Data Formats
-
-### 3.1 Input Format (`CitizenReport`)
-```typescript
-interface CitizenReport {
-  evidence: {
-    file: File;
-    previewUrl: string;
-    name: string;
-    sizeBytes: number;
-    type: string;
-  } | null;
-  description: string;
-  location: {
-    addressText: string;
-  };
-  timestamp: string;
-}
-```
-
-### 3.2 Domain Output Format (`AnalysisResult`)
-```typescript
-interface AnalysisResult {
-  isMock: boolean;
-  status: 'ANALYZED' | 'PENDING' | 'ERROR';
-  issueType: string;
-  severity: 'Low' | 'Medium' | 'High' | 'Critical';
-  reason: string;
-  department: string;
-  evidenceStatus: string;
-  confidenceScore: number;
-  summaryNotes: string;
-  perceivedElements: string[];
-  disclaimer: string;
-  analyzedAt: string;
-}
-```
+## Files Included
+- `index.html`: Municipal-tech dashboard layout with glassmorphism, responsive navigation tabs, and multimodal inputs.
+- `style.css`: Dark navy/cyan design system with custom animations (glow pulse, waveform visualizer, radar scan).
+- `script.js`: Centralized API configuration (`http://localhost:8000/api`) with autonomous fallback demo simulation and telemetry trace logging.
 
 ---
 
-## 4. Testing the Milestone
+## How to Run
+Simply open `index.html` in any modern web browser or serve via any static web server:
 
-1. **Type Checking:**
-   ```bash
-   cd frontend
-   npx tsc --noEmit
-   ```
-2. **Serving the Frontend:**
-   Any static server or browser can open `frontend/index.html` directly:
-   ```bash
-   npx serve frontend
-   # or
-   python -m http.server 3001 -d frontend
-   ```
-3. **Interactive Validation Checklist:**
-   - **Form Validation**: Click "Analyze Issue" with empty inputs. Verify that validation errors appear for photo, description, and location.
-   - **Image Upload**: Drag or select an image (`.jpg`, `.png`, `.webp`). Verify the preview thumbnail, size, format, and "Replace" / "Remove" controls.
-   - **File Validation**: Attempt uploading non-image files or files > 10MB; verify clear validation messages.
-   - **Description Validation**: Enter fewer than 10 characters; verify minimum length enforcement.
-   - **Mock Service Call**: Fill all fields and click "Analyze Issue". Verify loading indicator, followed by the "Development Mock Data Only" modal dialog with the mapped mock perception data.
+```bash
+# Option 1: Direct browser
+double-click index.html
 
----
+# Option 2: Python HTTP Server
+python3 -m http.server 3000
 
-## 5. Future Backend Integration Notes (For Piyush)
+# Option 3: Node / npx serve
+npx serve .
+```
 
-When the backend API contract is finalized by Piyush:
-1. Provide the exact HTTP method, endpoint URL (e.g., `POST /api/v1/complaints/analyze`), and multipart payload format.
-2. Implement a `RealAnalysisAdapter` inside `src/services/adapters/` that maps the backend JSON to `AnalysisResult`.
-3. Provide environment variable configuration mechanism for the backend URL without hard-coding in the client.
-4. Replace the mock service in `src/services/analysisService.js` with the real HTTP call.
+## Backend API Specification
+The frontend connects to the following endpoints when online:
+- `POST /api/complaints`: Submit new complaint payload
+- `POST /api/complaints/{id}/analyze`: Run agent swarm pipeline
+- `GET /api/complaints/{id}`: Retrieve structured ticket
+- `GET /api/complaints/{id}/status`: Lifecycle state polling
+- `POST /api/complaints/{id}/verification`: Submit before/after repair proof

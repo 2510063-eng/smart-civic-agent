@@ -1,57 +1,1067 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CivicResolve — Citizen Portal (Report & Track Civic Issues)</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#ecfeff',
-              500: '#06b6d4',
-              600: '#0891b2',
-              700: '#0e7490',
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Civic - AI-Powered Civic Issue Resolution</title>
+    <meta name="description" content="AI-Powered Civic Issue Resolution Agent - autonomous reporting, agentic loop tracking, and resolution verification" />
+    <meta property="og:title" content="Smart Civic - AI-Powered Civic Issue Resolution" />
+    <meta property="og:description" content="AI-Powered Civic Issue Resolution Agent - autonomous reporting, agentic loop tracking, and resolution verification" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              navy: {
+                950: '#070d19',
+                900: '#0b1329',
+                800: '#0f172a',
+                700: '#1e293b'
+              },
+              cyan: {
+                400: '#22d3ee',
+                500: '#06b6d4',
+                600: '#0891b2'
+              }
+            },
+            fontFamily: {
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'monospace']
             }
           }
         }
       }
-    }
-  </script>
+    </script>
 
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-[#070d19] text-slate-100 min-h-screen tech-grid-bg antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+    <!-- Top System Announcement / Team Ownership Banner -->
+    <div class="border-b border-cyan-500/20 bg-slate-950/80 backdrop-blur-md px-4 py-1.5 text-xs text-slate-400">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="flex h-2 w-2 relative">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+          </span>
+          <span class="font-mono text-cyan-300 font-semibold tracking-wide">SMART CIVIC AGENT SWARM</span>
+          <span class="text-slate-500">|</span>
+          <span class="hidden sm:inline text-slate-400">Autonomous Closed-Loop Resolution Protocol v2.6</span>
+        </div>
 
-  <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="./css/styles.css">
-</head>
-<body class="bg-[#080d1a] text-slate-100 flex flex-col min-h-screen antialiased selection:bg-cyan-500 selection:text-white">
+        <div class="flex items-center gap-3">
+          <!-- Backend / Demo Mode Indicator -->
+          <div id="api-status-badge" class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-cyan-950/70 border border-cyan-500/30 text-cyan-300">
+            <span id="api-status-dot" class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            <span id="api-status-text">Mode: Autonomous Demo (Auto-Fallback)</span>
+          </div>
 
-  <!-- Application Header -->
-  <div id="app-header"></div>
+          <div class="hidden md:flex items-center gap-2 text-[11px] text-slate-400">
+            <span class="text-slate-500">Citizen Frontend:</span>
+            <span class="text-slate-200 font-medium px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">Samyak</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <!-- Main View Area -->
-  <main class="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex items-center justify-center">
-    <div id="app-main" class="w-full"></div>
-  </main>
+    <!-- Main Navigation Header -->
+    <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+        <!-- Logo & Identity -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 p-0.5 shadow-lg shadow-cyan-500/20">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-cyan-400">
+              <i data-lucide="shield-alert" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+                Smart Civic
+                <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold">AI Agentic</span>
+              </h1>
+            </div>
+            <p class="text-xs text-slate-400">AI-Powered Civic Issue Resolution</p>
+          </div>
+        </div>
 
-  <!-- Footer Notice -->
-  <footer class="border-t border-slate-800/80 bg-slate-950/60 py-4 px-4 text-center text-xs text-slate-500">
-    <p>CivicResolve AI • Citizen Reporting Frontend (Milestone 1 — Issue Intake & Preview)</p>
-  </footer>
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button id="tab-btn-citizen-report" onclick="switchTab('citizen-report')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm transition-all flex items-center gap-2 cursor-pointer">
+            <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+            <span>Citizen Report</span>
+          </button>
+          <button id="tab-btn-my-complaints" onclick="switchTab('my-complaints')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2 cursor-pointer">
+            <i data-lucide="inbox" class="w-4 h-4"></i>
+            <span>My Complaints</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-cyan-300 font-mono">3</span>
+          </button>
+          <button id="tab-btn-agent-activity" onclick="switchTab('agent-activity')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2 cursor-pointer">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+            <span>Agent Activity</span>
+          </button>
+        </nav>
 
-  <!-- Main Application Script (ES Module) -->
-  <script type="module" src="./src/app.js"></script>
-</body>
+        <!-- Right Quick Controls -->
+        <div class="hidden lg:flex items-center gap-2">
+          <a href="./smart-civic-frontend.zip" download="smart-civic-frontend.zip" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-cyan-400"></i> Download ZIP
+          </a>
+          <button onclick="loadPreset('pothole'); switchTab('citizen-report');" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700/80 text-slate-300 border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i> Reset Demo
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <!-- ============================================== -->
+      <!-- VIEW 1: CITIZEN REPORT (PRIMARY INTERACTIVE)   -->
+      <!-- ============================================== -->
+      <div id="view-citizen-report" class="space-y-8">
+        
+        <!-- Hero Section -->
+        <section class="glass-panel-glow p-6 sm:p-8 rounded-2xl relative overflow-hidden">
+          <div class="absolute -right-20 -top-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="max-w-3xl relative z-10">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 mb-3">
+              <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+              <span>Next-Gen Autonomous Municipal Infrastructure</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+              Report a Civic Issue
+            </h2>
+            <p class="text-sm sm:text-base text-slate-300 mt-2 leading-relaxed">
+              AI agents analyze, route, monitor and resolve civic problems.
+              Experience an intelligent closed-loop from first citizen photo to verified repair.
+            </p>
+
+            <!-- Closed Loop Pipeline Banner -->
+            <div class="mt-6 pt-5 border-t border-slate-800/80 flex items-center gap-2 flex-wrap text-xs font-mono font-medium">
+              <span class="text-slate-400">AGENTIC LOOP:</span>
+              <span class="px-2 py-1 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">EVIDENCE</span>
+              <span class="text-cyan-500">→</span>
+              <span class="px-2 py-1 rounded bg-blue-950/60 text-blue-300 border border-blue-500/30">DECISION</span>
+              <span class="text-blue-500">→</span>
+              <span class="px-2 py-1 rounded bg-indigo-950/60 text-indigo-300 border border-indigo-500/30">ACTION</span>
+              <span class="text-indigo-500">→</span>
+              <span class="px-2 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">MONITORING</span>
+              <span class="text-emerald-500">→</span>
+              <span class="px-2 py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">VERIFICATION</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quick Demo Scenarios Selector -->
+        <div class="flex items-center justify-between gap-3 flex-wrap bg-slate-900/70 p-3 rounded-xl border border-slate-800 shadow-sm">
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+            <span class="font-semibold text-slate-300">Quick Demo Presets:</span>
+          </div>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button onclick="loadPreset('pothole')" data-preset="pothole" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-medium transition-all cursor-pointer">
+              🚧 Pothole
+            </button>
+            <button onclick="loadPreset('garbage')" data-preset="garbage" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer">
+              🗑️ Garbage
+            </button>
+            <button onclick="loadPreset('streetlight')" data-preset="streetlight" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer">
+              💡 Streetlight
+            </button>
+            <button onclick="loadPreset('water')" data-preset="water" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer">
+              🚰 Water Leak
+            </button>
+            <button onclick="loadPreset('drainage')" data-preset="drainage" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer">
+              🌊 Drainage
+            </button>
+            <button onclick="loadPreset('other')" data-preset="other" class="preset-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer">
+              ⚠️ Other
+            </button>
+          </div>
+        </div>
+
+        <!-- Complaint Input Card (P0) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <!-- Left Column: Input Form (5 cols) -->
+          <div class="lg:col-span-5 space-y-6">
+            <div id="complaint-form-card" class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-5">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-base text-white flex items-center gap-2">
+                  <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i>
+                  Submit Civic Evidence
+                </h3>
+                <span class="text-[11px] font-mono text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  AI Ingestion
+                </span>
+              </div>
+
+              <!-- Form Validation Alert Banner (Hidden by default) -->
+              <div id="form-validation-alert" class="hidden p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/50 text-xs text-rose-200 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-rose-300">
+                  <i data-lucide="alert-octagon" class="w-4 h-4 shrink-0 text-rose-400"></i>
+                  <span>Please complete the required details:</span>
+                </div>
+                <ul id="validation-errors-list" class="list-disc list-inside space-y-0.5 text-rose-300/90 text-[11px] pl-1">
+                  <!-- Injected via JavaScript -->
+                </ul>
+              </div>
+
+              <!-- 1. Issue Category Selection Cards -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-2.5 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-mono flex items-center justify-center font-bold">1</span>
+                    Issue Category
+                  </span>
+                  <span class="text-[11px] text-cyan-400 font-mono" id="selected-category-label">Pothole</span>
+                </label>
+                
+                <!-- Modern Responsive Category Cards (2 cols mobile, 3 cols sm+) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="category-cards-grid">
+                  
+                  <!-- Pothole -->
+                  <div onclick="selectCategory('pothole')" data-category="pothole" class="category-card active p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Pothole</p>
+                      <p class="text-[10px] text-slate-400 truncate">Roads & Asphalt</p>
+                    </div>
+                  </div>
+
+                  <!-- Garbage -->
+                  <div onclick="selectCategory('garbage')" data-category="garbage" class="category-card p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-slate-400 group-hover:text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot hidden w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Garbage</p>
+                      <p class="text-[10px] text-slate-400 truncate">Solid Waste</p>
+                    </div>
+                  </div>
+
+                  <!-- Streetlight -->
+                  <div onclick="selectCategory('streetlight')" data-category="streetlight" class="category-card p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-slate-400 group-hover:text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot hidden w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Streetlight</p>
+                      <p class="text-[10px] text-slate-400 truncate">Electrical Grid</p>
+                    </div>
+                  </div>
+
+                  <!-- Water Leakage -->
+                  <div onclick="selectCategory('water')" data-category="water" class="category-card p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-slate-400 group-hover:text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot hidden w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Water Leakage</p>
+                      <p class="text-[10px] text-slate-400 truncate">Water Mains</p>
+                    </div>
+                  </div>
+
+                  <!-- Drainage -->
+                  <div onclick="selectCategory('drainage')" data-category="drainage" class="category-card p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-slate-400 group-hover:text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="waves" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot hidden w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Drainage</p>
+                      <p class="text-[10px] text-slate-400 truncate">Culverts & Silt</p>
+                    </div>
+                  </div>
+
+                  <!-- Other -->
+                  <div onclick="selectCategory('other')" data-category="other" class="category-card p-2.5 rounded-xl flex flex-col justify-between group">
+                    <div class="flex items-center justify-between">
+                      <div class="category-icon w-7 h-7 rounded-lg bg-slate-800 text-slate-400 group-hover:text-cyan-400 flex items-center justify-center transition-all">
+                        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="check-dot hidden w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#38bdf8]"></span>
+                    </div>
+                    <div class="mt-2">
+                      <p class="font-bold text-xs text-white group-hover:text-cyan-300 transition-colors">Other</p>
+                      <p class="text-[10px] text-slate-400 truncate">Public Works</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- 2. Visual Evidence Upload with Drag/Drop & Enhanced Preview -->
+              <div id="image-upload-section">
+                <label class="block text-xs font-semibold text-slate-300 mb-2 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-mono flex items-center justify-center font-bold">2</span>
+                    Visual Evidence (Photo)
+                  </span>
+                  <span class="text-[11px] text-slate-400">JPG, PNG, WEBP (Max 10MB)</span>
+                </label>
+
+                <!-- Drag & Drop Container -->
+                <div id="image-drop-zone" class="drop-zone relative border-2 border-dashed border-slate-700 hover:border-cyan-500/60 rounded-xl p-3.5 text-center transition-all bg-slate-900/50 group">
+                  <input type="file" id="image-file-input" accept="image/*" onchange="handleImageUpload(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
+                  
+                  <!-- Placeholder (Shown when no image) -->
+                  <div id="image-placeholder" class="space-y-2 py-4 hidden">
+                    <div class="w-12 h-12 rounded-full bg-slate-800/90 flex items-center justify-center mx-auto text-slate-400 group-hover:text-cyan-400 group-hover:scale-105 transition-all shadow-inner">
+                      <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs text-slate-200 font-semibold">Drop citizen photo here, or <span class="text-cyan-400 underline">browse</span></p>
+                      <p class="text-[11px] text-slate-400 mt-0.5">High-res photos enable sub-millimeter computer vision defect analysis</p>
+                    </div>
+                  </div>
+
+                  <!-- Image Preview Container (With Controls & Metadata) -->
+                  <div id="preview-wrapper" class="relative rounded-lg overflow-hidden group/preview">
+                    <img id="image-preview" src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80" alt="Evidence Preview" class="w-full h-44 object-cover rounded-lg border border-slate-700 shadow-md transition-all" />
+                    
+                    <!-- Top Overlay Badges -->
+                    <div class="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                      <span class="px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur-sm border border-cyan-500/40 text-[10px] font-mono text-cyan-300 flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3 h-3 text-cyan-400"></i> Evidence Attached
+                      </span>
+                      <span id="image-metadata-badge" class="px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur-sm border border-slate-700 text-[10px] font-mono text-slate-300">
+                        Geo-Tagged
+                      </span>
+                    </div>
+
+                    <!-- Bottom Action Controls Bar -->
+                    <div class="absolute bottom-2 right-2 flex items-center gap-1.5 z-30">
+                      <button type="button" onclick="triggerFileInput(event)" class="px-2.5 py-1 rounded bg-slate-900/90 hover:bg-slate-800 text-[11px] text-cyan-300 border border-slate-700 transition-all flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i> Replace
+                      </button>
+                      <button type="button" onclick="removeUploadedImage(event)" class="px-2.5 py-1 rounded bg-rose-950/90 hover:bg-rose-900/90 text-[11px] text-rose-300 border border-rose-500/40 transition-all flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i> Clear
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Quick Preset Photos row -->
+                <div class="mt-2 flex items-center gap-1 text-[11px] text-slate-400 overflow-x-auto pb-0.5">
+                  <span class="shrink-0 text-[10px] uppercase font-mono text-slate-500">Demo Photos:</span>
+                  <button type="button" onclick="loadPresetPhoto('pothole')" class="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] shrink-0">Pothole</button>
+                  <button type="button" onclick="loadPresetPhoto('garbage')" class="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] shrink-0">Garbage</button>
+                  <button type="button" onclick="loadPresetPhoto('streetlight')" class="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] shrink-0">Streetlight</button>
+                  <button type="button" onclick="loadPresetPhoto('water')" class="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] shrink-0">Water Leak</button>
+                  <button type="button" onclick="loadPresetPhoto('drainage')" class="px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] shrink-0">Drainage</button>
+                </div>
+              </div>
+
+              <!-- 3. Text Description with Character Counter -->
+              <div id="description-section">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-mono flex items-center justify-center font-bold">3</span>
+                    Description of the Issue
+                  </label>
+                  <button id="voice-btn" type="button" onclick="toggleVoiceInput()" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
+                    <i data-lucide="mic" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Voice Input</span>
+                  </button>
+                </div>
+
+                <!-- Voice Audio Visualizer Wave (Shown during recording) -->
+                <div id="voice-wave-container" class="hidden mb-2 p-2.5 rounded-lg bg-cyan-950/60 border border-cyan-500/40 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                    <span class="text-xs font-mono text-cyan-300">Recording speech & transcribing...</span>
+                  </div>
+                  <div id="voice-bars" class="flex items-center gap-1 h-5"></div>
+                </div>
+
+                <textarea id="issue-description" oninput="updateCharCount()" rows="3" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-slate-100 text-xs leading-relaxed transition-all placeholder:text-slate-400" placeholder="Describe the civic hazard, depth, danger to traffic or residents..."></textarea>
+                
+                <!-- Character counter & helper hint -->
+                <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                  <span id="char-hint" class="text-slate-400">Min 10 characters recommended for NLP routing</span>
+                  <span id="char-count" class="font-mono text-cyan-400">86 chars</span>
+                </div>
+              </div>
+
+              <!-- 4. Location Detection UI with Latitude/Longitude Display -->
+              <div id="location-section">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-mono flex items-center justify-center font-bold">4</span>
+                    Incident Location & Geotag
+                  </label>
+                  <button id="btn-detect-gps" type="button" onclick="detectLocation()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-900/60 transition-all cursor-pointer">
+                    <i data-lucide="locate-fixed" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span id="loc-btn-text">Detect GPS</span>
+                  </button>
+                </div>
+                
+                <!-- Location Address Input -->
+                <div class="relative mb-2">
+                  <input type="text" id="issue-location" value="Near College Gate, Sector 4, North Zone" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-slate-100 text-xs placeholder:text-slate-400" placeholder="Landmark, street, or sector name..." />
+                  <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400 absolute left-3 top-3"></i>
+                </div>
+
+                <!-- Formatted Lat/Long & Accuracy Display Box -->
+                <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Latitude</span>
+                    <span id="display-latitude" class="font-mono font-bold text-cyan-300 text-xs">18.5204° N</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Longitude</span>
+                    <span id="display-longitude" class="font-mono font-bold text-cyan-300 text-xs">73.8567° E</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">GPS Precision</span>
+                    <span id="display-accuracy" class="font-mono text-emerald-400 text-xs">±5m (Lock)</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-mono block">Ward Jurisdiction</span>
+                    <span id="display-ward" class="text-slate-200 text-xs font-semibold">Zone 4 (North)</span>
+                  </div>
+                </div>
+
+                <!-- Quick Location Chips -->
+                <div class="mt-2 flex items-center gap-1.5 overflow-x-auto text-[11px] pb-0.5">
+                  <span class="text-[10px] text-slate-500 uppercase font-mono shrink-0">Wards:</span>
+                  <button type="button" onclick="setLocationPreset('college')" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">College Gate</button>
+                  <button type="button" onclick="setLocationPreset('market')" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Market Plaza</button>
+                  <button type="button" onclick="setLocationPreset('ringroad')" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Ring Road</button>
+                  <button type="button" onclick="setLocationPreset('central')" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-cyan-300 border border-slate-700 text-[10px] shrink-0">Main Avenue</button>
+                </div>
+              </div>
+
+              <!-- 5. Citizen Severity & Priority Selection -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-2 flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-mono flex items-center justify-center font-bold">5</span>
+                    Reported Severity & Impact
+                  </span>
+                  <span id="selected-severity-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">HIGH PRIORITY</span>
+                </label>
+
+                <!-- Responsive Severity Selector (4 cards) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="severity-selector-grid">
+                  
+                  <!-- Low -->
+                  <div onclick="selectSeverity('LOW')" data-severity="LOW" class="severity-card p-2 rounded-xl text-center">
+                    <span class="text-emerald-400 text-xs font-bold block">LOW</span>
+                    <span class="text-[10px] text-slate-400 block mt-0.5 leading-tight">Minor / Cosmetic</span>
+                  </div>
+
+                  <!-- Medium -->
+                  <div onclick="selectSeverity('MEDIUM')" data-severity="MEDIUM" class="severity-card p-2 rounded-xl text-center">
+                    <span class="text-blue-400 text-xs font-bold block">MEDIUM</span>
+                    <span class="text-[10px] text-slate-400 block mt-0.5 leading-tight">Disruption</span>
+                  </div>
+
+                  <!-- High (Active by default for pothole) -->
+                  <div onclick="selectSeverity('HIGH')" data-severity="HIGH" class="severity-card active-high p-2 rounded-xl text-center">
+                    <span class="text-amber-400 text-xs font-bold block">HIGH</span>
+                    <span class="text-[10px] text-amber-300/80 block mt-0.5 leading-tight">Vehicle Hazard</span>
+                  </div>
+
+                  <!-- Critical -->
+                  <div onclick="selectSeverity('CRITICAL')" data-severity="CRITICAL" class="severity-card p-2 rounded-xl text-center">
+                    <span class="text-rose-400 text-xs font-bold block">CRITICAL</span>
+                    <span class="text-[10px] text-slate-400 block mt-0.5 leading-tight">Life Safety</span>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Loading State: Progress Bar (Active when submitting) -->
+              <div id="submission-progress-container" class="hidden space-y-2 pt-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span id="submission-step-label" class="text-cyan-300 font-mono font-medium flex items-center gap-1.5">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400 animate-spin"></i>
+                    <span>Swarm Initializing...</span>
+                  </span>
+                  <span id="submission-percent-label" class="font-mono text-cyan-400 font-bold">12%</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                  <div id="submission-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-400 transition-all duration-300" style="width: 12%;"></div>
+                </div>
+              </div>
+
+              <!-- 6. Analyze Issue / Submit Button -->
+              <div class="pt-2">
+                <button id="btn-analyze-issue" type="button" onclick="validateAndRunPipeline()" class="w-full py-3.5 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 via-cyan-400 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer transform active:scale-[0.99]">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-slate-950"></i>
+                  <span>Analyze Issue with Agent Swarm</span>
+                </button>
+                <p class="text-[11px] text-center text-slate-400 mt-2">
+                  Dispatches 8 autonomous municipal agents for classification, routing & verification
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Agent Pipeline Display (7 cols) -->
+          <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Agent Pipeline Container -->
+            <div id="pipeline-section" class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-5">
+              
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+                <div>
+                  <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    <i data-lucide="cpu" class="w-4 h-4 text-cyan-400"></i>
+                    Agentic Execution Pipeline
+                  </h3>
+                  <p class="text-xs text-slate-400">Real-time trace of specialized autonomous agents</p>
+                </div>
+
+                <!-- Current Global Agent State Badge -->
+                <div id="live-status-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider badge-thinking flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-current animate-ping"></span>
+                  <span id="current-status-text">THINKING</span>
+                </div>
+              </div>
+
+              <!-- 9 Agent Nodes Grid -->
+              <div id="agent-nodes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Dynamically injected via script.js -->
+              </div>
+            </div>
+
+            <!-- Agent Decisions Trace Log Summary (Inline) -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-700/60 space-y-3">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="terminal" class="w-4 h-4 text-cyan-400"></i>
+                  Active Agent Trace
+                </h4>
+                <div class="flex items-center gap-2">
+                  <button onclick="exportTraceJSON()" class="text-[11px] text-slate-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
+                    <i data-lucide="copy" class="w-3 h-3"></i> Copy Trace
+                  </button>
+                </div>
+              </div>
+
+              <!-- Filter Buttons -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+                <button onclick="filterTrace('ALL')" data-category="ALL" class="trace-filter-btn px-2.5 py-1 text-xs rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-medium transition-all">ALL</button>
+                <button onclick="filterTrace('EVIDENCE')" data-category="EVIDENCE" class="trace-filter-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-slate-600 transition-all">EVIDENCE</button>
+                <button onclick="filterTrace('SEVERITY')" data-category="SEVERITY" class="trace-filter-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-slate-600 transition-all">SEVERITY</button>
+                <button onclick="filterTrace('ROUTING')" data-category="ROUTING" class="trace-filter-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-slate-600 transition-all">ROUTING</button>
+                <button onclick="filterTrace('MONITORING')" data-category="MONITORING" class="trace-filter-btn px-2.5 py-1 text-xs rounded-md bg-slate-800/80 text-slate-400 border border-slate-700 hover:border-slate-600 transition-all">MONITORING</button>
+              </div>
+
+              <!-- Log Output Box -->
+              <div id="agent-trace-logs" class="bg-slate-950/80 rounded-xl p-3 border border-slate-800 max-h-52 overflow-y-auto space-y-1">
+                <!-- Logs rendered via script.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- POST-ANALYSIS: STRUCTURED COMPLAINT & TRACKING -->
+        <!-- ============================================== -->
+        <div id="result-card-section" class="space-y-8 pt-4">
+          
+          <!-- Section Divider Header -->
+          <div class="flex items-center gap-3">
+            <div class="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+            <div class="px-4 py-1 rounded-full text-xs font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-2">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+              STRUCTURED COMPLAINT READY & ACTIVE
+            </div>
+            <div class="h-px flex-1 bg-gradient-to-r from-cyan-500/30 via-cyan-500/30 to-transparent"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left: Structured Complaint Card (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+              <div class="glass-panel-glow p-6 sm:p-7 rounded-2xl border border-cyan-500/30 shadow-2xl relative">
+                
+                <!-- Card Header -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4 flex-wrap gap-2">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center">
+                      <i data-lucide="file-check" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <span class="text-xs text-slate-400">Municipal Complaint Reference</span>
+                      <h3 id="res-cid" class="text-lg sm:text-xl font-mono font-bold text-white tracking-wider">
+                        CIV-2026-00124
+                      </h3>
+                    </div>
+                  </div>
+
+                  <!-- Status Chip -->
+                  <div class="text-right">
+                    <span class="text-[10px] uppercase text-slate-400 block">Lifecycle State</span>
+                    <span id="res-status" class="px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400">
+                      SUBMITTED
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Card Details Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 py-5 border-b border-slate-800/80 text-xs">
+                  <div>
+                    <span class="text-slate-400 block mb-1">Detected Issue</span>
+                    <span id="res-issue" class="font-bold text-slate-100 text-sm">Pothole</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block mb-1">AI Confidence</span>
+                    <span id="res-confidence" class="font-bold text-cyan-400 font-mono text-sm">94%</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block mb-1">Severity Rating</span>
+                    <span id="res-severity" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      HIGH
+                    </span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block mb-1">Priority Index</span>
+                    <span id="res-priority" class="font-bold text-slate-100 font-mono text-sm">87/100</span>
+                  </div>
+                  <div class="sm:col-span-2">
+                    <span class="text-slate-400 block mb-1">Assigned Department</span>
+                    <span id="res-department" class="font-bold text-slate-100 text-sm flex items-center gap-1.5">
+                      <i data-lucide="building-2" class="w-3.5 h-3.5 text-blue-400"></i>
+                      Roads & Infrastructure
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Location & Duplicate Clustering Summary -->
+                <div class="space-y-3 pt-4 text-xs">
+                  <div class="flex items-start gap-2 text-slate-300">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+                    <div>
+                      <span class="text-slate-400">Location:</span>
+                      <p id="res-location" class="font-medium text-slate-200">Near College Gate, Sector 4, North Zone</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-2 text-slate-300">
+                    <i data-lucide="git-merge" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                    <div>
+                      <span class="text-slate-400">Duplicate Check:</span>
+                      <p id="res-duplicate" class="font-medium text-emerald-300">No nearby matching complaint</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SLA Countdown Timer Widget -->
+                <div class="mt-6 p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center justify-between flex-wrap gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                      <i data-lucide="timer" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <span class="text-[11px] text-slate-400 block">Active Resolution SLA</span>
+                      <span class="text-xs font-semibold text-slate-200">48-Hour Municipal Guarantee</span>
+                    </div>
+                  </div>
+
+                  <div class="text-right">
+                    <span class="text-[10px] font-mono text-slate-400 uppercase block">Remaining Window</span>
+                    <span id="sla-timer-text" class="text-lg font-mono font-bold text-cyan-300 tracking-wider">
+                      47:59:58
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Status Tracking & Closed-Loop Simulation Controls (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+              
+              <!-- Status Timeline -->
+              <div class="glass-panel p-6 rounded-2xl border border-slate-700/60 shadow-xl space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h4 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i data-lucide="git-commit" class="w-4 h-4 text-cyan-400"></i>
+                    Closed-Loop Lifecycle Tracker
+                  </h4>
+                  <span class="text-[11px] text-slate-400">Autonomous Follow-up</span>
+                </div>
+
+                <div id="tracking-timeline-container" class="space-y-3.5">
+                  <!-- Rendered via script.js -->
+                </div>
+
+                <!-- Closed-Loop Interactive Demo Simulation Action Bar -->
+                <div class="pt-4 border-t border-slate-800 space-y-2.5">
+                  <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Hackathon Demo Controls (Simulate Actions)
+                  </span>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="simulateWorkerAssignment()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i data-lucide="user-check" class="w-3.5 h-3.5 text-cyan-400"></i>
+                      <span>Assign Worker</span>
+                    </button>
+
+                    <button onclick="simulateRepair()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>Simulate Repair</span>
+                    </button>
+                  </div>
+
+                  <button onclick="openUploadRepairProofModal()" class="w-full px-3 py-2.5 rounded-lg text-xs font-semibold bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-200 border border-cyan-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Upload Repair Proof (Before/After)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Resolution Verification Panel (Appears after proof upload) -->
+          <div id="verification-results-panel" class="glass-panel-glow p-6 rounded-2xl border border-cyan-500/30 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center">
+                  <i data-lucide="scan-line" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-base text-white">AI Before/After Resolution Verification</h4>
+                  <p class="text-xs text-slate-400">Dual-photo computer vision verification test</p>
+                </div>
+              </div>
+
+              <!-- Quick Outcome Simulation Toggles -->
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400">Simulate Outcome:</span>
+                <button onclick="executeVerification(true)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30 transition-all cursor-pointer">
+                  ✓ Pass (Resolved 96%)
+                </button>
+                <button onclick="executeVerification(false)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 hover:bg-rose-500/30 transition-all cursor-pointer">
+                  ✕ Fail (Reopen & Escalate)
+                </button>
+              </div>
+            </div>
+
+            <!-- Before / After Photo Comparison Display -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+                  <span class="flex items-center gap-1.5"><i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-rose-400"></i> BEFORE (Citizen Photo)</span>
+                  <span class="text-[10px] font-mono text-slate-400">Timestamp: 10:42 AM</span>
+                </div>
+                <div class="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 h-52">
+                  <img id="ver-before-img" src="https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=600&q=80" alt="Before" class="w-full h-full object-cover" />
+                  <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-rose-950/80 border border-rose-500/40 text-[10px] font-mono text-rose-300">
+                    Defect Detected
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+                  <span class="flex items-center gap-1.5"><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-emerald-400"></i> AFTER (Repair Proof)</span>
+                  <span class="text-[10px] font-mono text-slate-400">Timestamp: 03:10 PM</span>
+                </div>
+                <div class="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 h-52">
+                  <img id="ver-after-img" src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80" alt="After" class="w-full h-full object-cover" />
+                  <div class="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/40 text-[10px] font-mono text-emerald-300">
+                    Remediation Patch
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Verdict Outcome Box -->
+            <div id="verification-verdict-box" class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/40 flex items-center justify-between flex-wrap gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span id="verification-verdict-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400">
+                    RESOLVED
+                  </span>
+                  <h5 id="verification-verdict-title" class="font-bold text-sm text-slate-100">
+                    AI Verification Passed • 96% Match
+                  </h5>
+                </div>
+                <p id="verification-verdict-desc" class="text-xs text-slate-300 max-w-xl leading-relaxed">
+                  Computer vision confirmed complete asphalt seal, flat surface topology, and zero hazardous fissures.
+                </p>
+              </div>
+
+              <div class="text-right">
+                <span id="verification-confidence-score" class="font-mono font-bold text-sm text-emerald-300">
+                  AI Confidence: 96%
+                </span>
+                <span class="block text-[10px] text-slate-400">Audit Proof Logged</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 2: MY COMPLAINTS                          -->
+      <!-- ============================================== -->
+      <div id="view-my-complaints" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-white">My Civic Complaints</h2>
+            <p class="text-xs text-slate-400">Track and inspect all historical complaints and their autonomous agent logs</p>
+          </div>
+          <button onclick="switchTab('citizen-report')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold shadow-md hover:from-cyan-400 hover:to-blue-500 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Complaint
+          </button>
+        </div>
+
+        <div id="my-complaints-list" class="space-y-4">
+          <!-- Rendered dynamically via script.js -->
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 3: AGENT ACTIVITY & TRACE LOGS            -->
+      <!-- ============================================== -->
+      <div id="view-agent-activity" class="hidden space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold text-white">Agent Activity & Trace Telemetry</h2>
+          <p class="text-xs text-slate-400">Immutable audit log stream of autonomous decisions across municipal wards</p>
+        </div>
+
+        <!-- Telemetry Stats Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-panel p-4 rounded-xl border border-slate-700/60">
+            <span class="text-xs text-slate-400 block mb-1">Active AI Swarm Agents</span>
+            <span class="text-xl font-bold font-mono text-cyan-300">9 / 9 Online</span>
+            <span class="text-[10px] text-emerald-400 block mt-1">● 100% Operational</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-xl border border-slate-700/60">
+            <span class="text-xs text-slate-400 block mb-1">Total Issues Routed</span>
+            <span class="text-xl font-bold font-mono text-white">1,429</span>
+            <span class="text-[10px] text-cyan-400 block mt-1">+18 in last hour</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-xl border border-slate-700/60">
+            <span class="text-xs text-slate-400 block mb-1">Avg Decision Latency</span>
+            <span class="text-xl font-bold font-mono text-cyan-300">1.84s</span>
+            <span class="text-[10px] text-slate-400 block mt-1">Multi-agent consensus</span>
+          </div>
+
+          <div class="glass-panel p-4 rounded-xl border border-slate-700/60">
+            <span class="text-xs text-slate-400 block mb-1">SLA Compliance Rate</span>
+            <span class="text-xl font-bold font-mono text-emerald-400">98.2%</span>
+            <span class="text-[10px] text-emerald-400 block mt-1">Guaranteed resolution</span>
+          </div>
+        </div>
+
+        <!-- Full Audit Feed -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-700/60 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <i data-lucide="radio" class="w-4 h-4 text-cyan-400 animate-pulse"></i>
+              Live Municipal Agent Event Bus
+            </h3>
+            <button onclick="exportTraceJSON()" class="px-3 py-1 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Audit Trail (JSON)
+            </button>
+          </div>
+
+          <div id="full-activity-stream" class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 space-y-2 max-h-96 overflow-y-auto font-mono text-xs">
+            <!-- Full stream logs -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Upload Repair Proof Modal -->
+    <div id="repair-proof-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+      <div class="glass-panel-glow w-full max-w-lg p-6 rounded-2xl border border-cyan-500/40 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="font-bold text-base text-white flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-5 h-5 text-cyan-400"></i>
+            Submit Field Repair Evidence
+          </h3>
+          <button onclick="closeModal()" class="text-slate-400 hover:text-white cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Provide post-repair photo documentation. The AI Verification Agent will perform high-precision edge feature matching to confirm true remediation before closing the ticket.
+        </p>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1 text-center">
+            <span class="text-[10px] text-slate-400 uppercase">Original Complaint</span>
+            <img id="modal-before-img" src="" alt="Before" class="w-full h-32 object-cover rounded-lg border border-slate-700" />
+          </div>
+          <div class="space-y-1 text-center">
+            <span class="text-[10px] text-cyan-300 uppercase">Patched Proof</span>
+            <img id="modal-after-img" src="" alt="After" class="w-full h-32 object-cover rounded-lg border border-cyan-500/50" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button onclick="closeModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 border border-slate-700 cursor-pointer">
+            Cancel
+          </button>
+          <button onclick="confirmProofUpload()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold hover:from-cyan-400 hover:to-blue-500 cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            Confirm & Run AI Verification
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Professional Complaint Success / Confirmation Modal -->
+    <div id="complaint-success-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+      <div class="glass-panel-glow modal-pop-in w-full max-w-xl p-6 sm:p-7 rounded-2xl border border-cyan-500/50 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
+        
+        <!-- Modal Close Button -->
+        <button onclick="closeSuccessModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Top Celebratory Header -->
+        <div class="text-center space-y-2 pt-1">
+          <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mx-auto flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.35)]">
+            <i data-lucide="shield-check" class="w-8 h-8 text-emerald-400"></i>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+            Complaint Successfully Dispatched!
+          </h3>
+          <p class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+            Your report has been verified by the AI Swarm, cryptographically committed, and assigned to municipal field dispatch.
+          </p>
+        </div>
+
+        <!-- Reference Ticket Pill with 1-Click Copy -->
+        <div class="p-3.5 rounded-xl bg-slate-900/90 border border-cyan-500/40 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs text-slate-400 uppercase font-mono">Reference Ticket:</span>
+            <span id="modal-success-cid" class="text-base sm:text-lg font-mono font-extrabold text-cyan-300 tracking-wider">
+              CIV-2026-00124
+            </span>
+          </div>
+          <button onclick="copySuccessComplaintId()" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition-all flex items-center gap-1 cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copy-btn-label">Copy ID</span>
+          </button>
+        </div>
+
+        <!-- Structured Details Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">Category</span>
+            <span id="modal-success-category" class="font-bold text-white">Pothole</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">Reported Severity</span>
+            <span id="modal-success-severity" class="font-bold text-amber-400">HIGH</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">AI Confidence</span>
+            <span id="modal-success-confidence" class="font-mono font-bold text-cyan-300">94%</span>
+          </div>
+          <div class="col-span-2 sm:col-span-2">
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">Assigned Department</span>
+            <span id="modal-success-dept" class="font-bold text-slate-100 flex items-center gap-1">
+              <i data-lucide="building-2" class="w-3 h-3 text-blue-400"></i> Roads & Infrastructure
+            </span>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">Guaranteed SLA</span>
+            <span id="modal-success-sla" class="font-bold text-emerald-400">48 Hours</span>
+          </div>
+          <div class="col-span-2 sm:col-span-3 pt-1 border-t border-slate-800/80">
+            <span class="text-[10px] text-slate-400 uppercase font-mono block mb-0.5">Geotagged Location</span>
+            <span id="modal-success-loc" class="text-slate-300 font-medium truncate block">
+              Near College Gate, Sector 4, North Zone [18.5204° N, 73.8567° E]
+            </span>
+          </div>
+        </div>
+
+        <!-- QR Code & Citizen Tracking Info -->
+        <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-lg bg-white p-1 flex items-center justify-center shrink-0">
+              <!-- SVG QR Code Icon representation -->
+              <svg viewBox="0 0 24 24" class="w-full h-full text-slate-900" fill="currentColor">
+                <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 2h2v4h-2v-4zm-4-2h2v2h-2v-2zm2 2h2v2h-2v-2zm2-2h2v2h-2v-2zm-2 4h4v2h-4v-2zm-2-2h2v2h-2v-2z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="font-bold text-slate-200">Mobile Citizen Pass Ready</p>
+              <p class="text-[11px] text-slate-400">Scan at municipal kiosks or share reference ticket with ward councilor</p>
+            </div>
+          </div>
+          <span class="px-2 py-1 rounded bg-emerald-950/80 border border-emerald-500/40 text-[10px] font-mono text-emerald-300 shrink-0">
+            ACTIVE SLA
+          </span>
+        </div>
+
+        <!-- Modal Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+          <button onclick="closeSuccessModal(); resetReportForm();" class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 border border-slate-700 transition-all cursor-pointer">
+            Report Another Issue
+          </button>
+          <button onclick="closeSuccessModal(); switchTab('my-complaints');" class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="list" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>My Complaints</span>
+          </button>
+          <button onclick="closeSuccessModal(); viewRegisteredComplaintInPipeline();" class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+            <span>Track in Pipeline</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+    <!-- Application Controller Scripts -->
+    <script src="./script.js"></script>
+    <script>
+      // Render Lucide icons after load
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+    </script>
+  </body>
 </html>
