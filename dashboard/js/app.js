@@ -447,7 +447,7 @@ function renderVerificationStudio() {
 
 // --- Verification Actions ---
 function handleApproveResolution(complaintId, resolutionId) {
-  window.store.verifyResolution(complaintId, resolutionId, true, "Authority verified before & after evidence: repair successful.");
+  window.apiClient.verifyResolution(complaintId, resolutionId, true, "Authority verified before & after evidence: repair successful.");
   showToast("Resolution Verified", `Complaint ${complaintId} has been successfully audited and CLOSED.`, "success");
 }
 
@@ -455,7 +455,7 @@ function handleRejectResolution(complaintId, resolutionId) {
   const reason = prompt("Enter reason for rejection (this will be logged in the autonomous escalation audit):", "Defect or debris still visible in after-image; repair incomplete.");
   if (!reason) return;
 
-  window.store.verifyResolution(complaintId, resolutionId, false, reason);
+  window.apiClient.verifyResolution(complaintId, resolutionId, false, reason);
   showToast("Resolution Rejected", `Complaint ${complaintId} REOPENED and marked with escalation priority.`, "warning");
 }
 

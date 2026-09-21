@@ -92,18 +92,18 @@ const CONFIG = {
     REOPENED: { label: "Reopened", class: "bg-orange-500/20 text-orange-400 border-orange-500/40" }
   },
 
-  // API Endpoints matching docs/API_CONTRACT.md
+  // API Endpoints matching FastAPI backend
   ENDPOINTS: {
-    HEALTH: "/health",
+    HEALTH: "/",
     COMPLAINTS: "/api/complaints",
     COMPLAINT_DETAIL: (id) => `/api/complaints/${id}`,
-    ASSIGN_WORKER: (id) => `/api/complaints/${id}/assign`,
+    ASSIGN_WORKER: (id) => `/api/complaints/${id}/status`,
     UPDATE_STATUS: (id) => `/api/complaints/${id}/status`,
-    AGENT_ACTIONS: (id) => `/api/complaints/${id}/actions`,
+    AGENT_ACTIONS: (id) => `/api/agent/actions/${id}`,
     VERIFY_RESOLUTION: (id) => `/api/complaints/${id}/verify`,
-    FOLLOW_UP: (id) => `/api/complaints/${id}/followup`,
-    ESCALATE: (id) => `/api/complaints/${id}/escalate`,
-    ANALYTICS: "/api/analytics",
+    FOLLOW_UP: (id) => `/api/agent/follow-up/${id}`,
+    ESCALATE: (id) => `/api/agent/escalate/${id}`,
+    ANALYTICS: "/api/admin/stats",
     WORKERS: "/api/workers",
     DEPARTMENTS: "/api/departments"
   }
