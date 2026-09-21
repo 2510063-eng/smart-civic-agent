@@ -87,10 +87,14 @@ function initMap() {
     attributionControl: false
   }).setView(CONFIG.DEFAULT_CENTER_COORDS, CONFIG.DEFAULT_ZOOM);
 
-  // CartoDB Dark Matter tiles for ultra-sleek GovTech look
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  // Free/public OpenStreetMap tiles (no API key required)
+  const tileUrl = CONFIG.MAP_TILE_URL || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const tileAttr = CONFIG.MAP_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+  L.tileLayer(tileUrl, {
     maxZoom: 19,
-    subdomains: 'abcd'
+    subdomains: 'abc',
+    attribution: tileAttr
   }).addTo(mapInstance);
 
   renderMapMarkers();

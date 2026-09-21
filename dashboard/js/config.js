@@ -10,6 +10,8 @@ const CONFIG = {
   DEFAULT_API_BASE_URL: "http://localhost:8000",
   DEFAULT_CENTER_COORDS: [16.7050, 74.2433], // Municipal Area (Kolhapur/Demo City)
   DEFAULT_ZOOM: 13,
+  MAP_TILE_URL: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  MAP_ATTRIBUTION: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 
   // Storage Keys
   STORAGE_KEYS: {
